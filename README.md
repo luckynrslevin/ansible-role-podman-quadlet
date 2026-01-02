@@ -29,7 +29,7 @@ This role is designed to leverage [podman quadlet](https://docs.podman.io/en/lat
 
 ```yaml
 ---
-- name: Sample playbook to depoy nginx as a rootless container
+- name: Sample playbook to deploy nginx as a rootless container
   hosts: all
 
   roles:
@@ -65,7 +65,7 @@ WantedBy=multi-user.target
 
 ```yaml
 ---
-- name: Sample playbook to depoy nginx as a rootful container
+- name: Sample playbook to deploy nginx as a rootful container
   hosts: all
 
   roles:
