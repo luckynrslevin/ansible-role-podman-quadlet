@@ -1,0 +1,36 @@
+---
+
+# Currently only redhat os supported
+- name: Assert remote host is a RedHat-based system
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.os_family == "RedHat"
+    fail_msg: >
+      podman-quadlet requires a RedHat-based system
+      (RHEL, CentOS, Rocky, Alma, Fedora).
+      Detected os_family={{ ansible_facts.os_family }}.
+
+# Check if Podman ≥ 5.0 is installed
+- name: Get podman version
+  ansible.builtin.command: podman --version
+  register: podman_version_cmd
+  changed_when: false
+  failed_when: podman_version_cmd.rc != 0
+
+- name: Extract podman major version
+  ansible.builtin.set_fact:
+    podman_major_version: >-
+      {{
+        podman_version_cmd.stdout
+        | regex_findall('[0-9]+')
+        | first
+        | int
+      }}
+
+- name: Assert podman version is >= 5
+  ansible.builtin.assert:
+    that:
+      - podman_major_version >= 5
+    fail_msg: >
+      podman-quadlet requires Podman version 5 or newer.
+      Detected: {{ podman_version_cmd.stdout }}

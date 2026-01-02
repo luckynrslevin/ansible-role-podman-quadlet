@@ -1,0 +1,59 @@
+---
+# Purpose: assert that the instance really ended up in the expected state.
+# Molecule calls this playbook with `molecule verify`.
+- name: Verify container is running
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    # rootless
+    - name: Check if rootless nginx container exists
+      become: true
+      become_user: testuser
+      ansible.builtin.command:
+        cmd: podman ps --filter "name=nginxrootless" --format "{{ '{{' }}.Names{{ '}}' }}"
+      register: nginx_rootless_status
+      changed_when: false
+
+    - name: Assert rootless container is running
+      ansible.builtin.assert:
+        that:
+          - "'nginx' in nginx_rootless_status.stdout"
+
+    - name: Check rootless nginx HTTP response
+      ansible.builtin.uri:
+        url: "http://{{ inventory_hostname }}:8080"
+        return_content: true
+        status_code: 200
+      register: nginx_rootless_response
+
+    - name: Assert the rootless nginx default page content
+      ansible.builtin.assert:
+        that:
+          - "'Welcome to nginx!' in nginx_rootless_response.content"
+        fail_msg: "Nginx page did not contain expected content!"
+
+    # rootful
+    - name: Check if rootful nginx container exists
+      become: true
+      ansible.builtin.command:
+        cmd: podman ps --filter "name=nginxrootful" --format "{{ '{{' }}.Names{{ '}}' }}"
+      register: nginx_rootful_status
+      changed_when: false
+
+    - name: Assert rootful container is running
+      ansible.builtin.assert:
+        that:
+          - "'nginx' in nginx_rootful_status.stdout"
+
+    - name: Check rootful nginx HTTP response
+      ansible.builtin.uri:
+        url: "http://{{ inventory_hostname }}"
+        return_content: true
+        status_code: 200
+      register: nginx_rootful_response
+
+    - name: Assert the rootful nginx default page content
+      ansible.builtin.assert:
+        that:
+          - "'Welcome to nginx!' in nginx_rootful_response.content"
+        fail_msg: "Nginx page did not contain expected content!"

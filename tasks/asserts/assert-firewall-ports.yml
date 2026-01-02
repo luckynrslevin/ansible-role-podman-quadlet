@@ -1,0 +1,74 @@
+---
+
+- name: Gather service facts
+  ansible.builtin.service_facts:
+
+- name: Set firewall status
+  ansible.builtin.set_fact:
+    podman_quadlet_firewall_status: >-
+      {{
+        ansible_facts['services'].get('firewalld.service', {}).get('state', 'absent')
+      }}
+
+- name: Assert that podman_quadlet_firewall_ports is defined and iterable
+  ansible.builtin.assert:
+    that:
+      - podman_quadlet_firewall_ports is defined
+      - podman_quadlet_firewall_ports is iterable
+    fail_msg: >-
+      podman_quadlet_firewall_ports must be defined and be a list.
+
+# Assert firewall port list
+# valid port examples:
+# - 80/tcp
+# - 443/tcp
+# - 1024-2048/tcp
+# - 32768-60999/udp
+#
+# invalid port examples:
+# - 0/tcp
+# - 70000/tcp
+# - 9000-8000/tcp
+# - 80/http
+# - abc/tcp
+
+- name: Assert firewall port format
+  ansible.builtin.assert:
+    that:
+      - item is match('^\d{1,5}(-\d{1,5})?/(tcp|udp)$')
+    fail_msg: >-
+      Invalid firewall port format '{{ item }}'.
+      Expected <port>/{tcp|udp} or <start>-<end>/{tcp|udp}.
+  loop: "{{ podman_quadlet_firewall_ports }}"
+  loop_control:
+    label: "{{ item }}"
+
+- name: Parse port numbers
+  ansible.builtin.set_fact:
+    _fw_parts: "{{ item.split('/')[0].split('-') }}"
+  loop: "{{ podman_quadlet_firewall_ports }}"
+  loop_control:
+    label: "{{ item }}"
+
+- name: Assert valid port numbers and ranges
+  ansible.builtin.assert:
+    that:
+      - >-
+          (
+            _fw_parts | length == 1
+            and _fw_parts[0] | int >= 1
+            and _fw_parts[0] | int <= 65535
+          )
+          or
+          (
+            _fw_parts | length == 2
+            and _fw_parts[0] | int >= 1
+            and _fw_parts[1] | int <= 65535
+            and _fw_parts[0] | int <= _fw_parts[1] | int
+          )
+    fail_msg: >-
+      Invalid firewall port range '{{ item }}'.
+      Ports must be between 1 and 65535 and ranges must be ascending.
+  loop: "{{ podman_quadlet_firewall_ports }}"
+  loop_control:
+    label: "{{ item }}"

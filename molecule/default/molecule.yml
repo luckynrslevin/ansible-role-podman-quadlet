@@ -1,0 +1,34 @@
+---
+
+ansible:
+  cfg:
+    defaults:
+      host_key_checking: false
+      verbosity: 1 # 1 = -v; 2 = -vv; 3 = -vvv
+    ssh_connection:
+      pipelining: true
+  env:
+    ANSIBLE_FORCE_COLOR: "1"
+    ANSIBLE_LOAD_CALLBACK_PLUGINS: "1"
+
+  executor:
+    backend: ansible-playbook
+    args:
+      ansible_playbook:
+        - --diff
+        - --inventory=./inventory/hosts
+
+  playbooks:
+    converge: converge.yml
+    prepare: prepare.yml
+    verify: verify.yml
+    cleanup: cleanup.yml
+
+scenario:
+  name: default
+  test_sequence:
+    - prepare
+    - cleanup
+    - converge
+    - verify
+    - cleanup

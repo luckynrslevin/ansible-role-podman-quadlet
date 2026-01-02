@@ -1,0 +1,21 @@
+---
+# Purpose: bring the instance to the desired state by running the role under test.
+# Molecule calls this playbook with `molecule converge`.
+- name: Converge podman-quadlet role
+  hosts: testserver
+  roles:
+    - role: podman_quadlet
+      podman_quadlet_container_file_name: nginxrootless.container
+      podman_quadlet_caller_role_path: "{{ playbook_dir }}"
+      podman_quadlet_rootless_user_name: testuser
+      podman_quadlet_volumes_file_names:
+        - nginxrootless-volume
+      podman_quadlet_firewall_ports:
+        - 8080/tcp
+    - role: podman_quadlet
+      podman_quadlet_container_file_name: nginxrootful.container
+      podman_quadlet_caller_role_path: "{{ playbook_dir }}"
+      podman_quadlet_volumes_file_names:
+        - nginxrootful-volume
+      podman_quadlet_firewall_ports:
+        - 80/tcp

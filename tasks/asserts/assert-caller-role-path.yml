@@ -1,0 +1,28 @@
+---
+
+- name: "Assert that podman_quadlet_caller_role_path is a non-empty string"
+  ansible.builtin.assert:
+    that:
+      - podman_quadlet_caller_role_path is string
+      - podman_quadlet_caller_role_path | length > 0
+    fail_msg: "podman_quadlet_caller_role_path must be a non-empty string."
+
+- name: "Assert that podman_quadlet_caller_role_path is different from current role_path"
+  ansible.builtin.assert:
+    that:
+      - podman_quadlet_caller_role_path != role_path
+    fail_msg: "The podman_quadlet_caller_role_path '{{ podman_quadlet_caller_role_path }}' must be different from the current role path '{{ role_path }}'."
+
+- name: "Assert that podman_quadlet_caller_role_path is a valid directory"
+  ansible.builtin.stat:
+    path: "{{ podman_quadlet_caller_role_path }}"
+  register: caller_role_path_stat
+  check_mode: true
+  delegate_to: localhost
+
+- name: "Assert that the caller role path exists"
+  ansible.builtin.assert:
+    that:
+      - caller_role_path_stat.stat.exists
+    fail_msg: "The caller role path '{{ podman_quadlet_caller_role_path }}' does not exist or is not accessible."
+  delegate_to: localhost

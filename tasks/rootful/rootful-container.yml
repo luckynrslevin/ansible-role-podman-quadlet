@@ -1,0 +1,64 @@
+---
+
+- name: Set full path dest file name of quadlet container file
+  ansible.builtin.set_fact:
+    podman_quadlet_systemd_dir: "/etc/containers/systemd/"
+
+- name: Create Podman Quadlet systemd directory for rootless user
+  become: true
+  ansible.builtin.file:
+    path: "{{ podman_quadlet_systemd_dir }}/{{ podman_quadlet_app_name }}"
+    state: directory
+    mode: "0755"
+
+- name: Render Quadlet container template (.container.j2) to systemd directory
+  become: true
+  ansible.builtin.template:
+    src: "{{ podman_quadlet_src_container_file_name_full_path }}"
+    dest: "{{ podman_quadlet_systemd_dir }}/{{ podman_quadlet_app_name }}/{{ podman_quadlet_app_name }}.container"
+    mode: "0600"
+  when:
+    - podman_quadlet_container_file_name | regex_search('\.container\.j2$') is not none
+  register: podman_quadlet_app_config_template
+ 
+
+- name: Copy Quadlet container file (.container) to systemd directory
+  become: true
+  ansible.builtin.copy:
+    src: "{{ podman_quadlet_src_container_file_name_full_path }}"
+    dest: "{{ podman_quadlet_systemd_dir }}/{{ podman_quadlet_app_name }}/{{ podman_quadlet_app_name }}.container"
+    mode: "0600"
+  when:
+    - podman_quadlet_container_file_name | regex_search('\.container$') is not none
+  register: podman_quadlet_app_config_file
+
+
+# Shell command required here, using ansible.builtin.systemd_service module in user scope did not work
+# Therefore supressing ansible-lint "Use shell only when shell functionality is required."
+# - name: Validate quadlet unit file of the container # noqa: command-instead-of-shell
+#   become: true
+#   ansible.builtin.shell:
+#     cmd: "/usr/lib/systemd/system-generators/podman-system-generator --dryrun"
+#   environment:
+#     QUADLET_UNIT_DIRS: "{{ podman_quadlet_systemd_dir }}/{{ podman_quadlet_app_name }}"
+#   register: podman_quadlet_systemd_validation_result
+#   ignore_errors: true
+#   changed_when: false
+
+# - name: Validation failed
+#   ansible.builtin.debug:
+#     msg: >
+#       Please check the syntax of your quadlet unit file.
+#       See section "debugging unit files" in
+#       https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html
+#   when: podman_quadlet_systemd_validation_result.rc != 0
+
+
+- name: Restart rootful container application
+  become: true
+  ansible.builtin.systemd:
+    name: "{{ podman_quadlet_app_name }}"
+    daemon_reload: true
+    state: restarted
+  when: (podman_quadlet_app_config_template.changed | default(false)) or
+        (podman_quadlet_app_config_file.changed | default(false))

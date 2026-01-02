@@ -1,0 +1,17 @@
+# Ignore macOS system files
+**/.DS_Store
+
+# Ignore all .tar.gz files in any directory
+**/*.tar.gz
+
+# Ansible temporary files (e.g. 3rd party ansible galaxy roles and collections)
+.ansible/
+
+# Visual Studio code configuration
+.vscode/
+
+# Python virtual environment
+.venv/
+
+# Exclude vault password file
+vault.pw

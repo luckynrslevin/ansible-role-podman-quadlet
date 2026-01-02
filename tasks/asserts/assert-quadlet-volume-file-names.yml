@@ -1,0 +1,31 @@
+---
+
+- name: "Assert that podman_quadlet_volumes_file_names is a list"
+  ansible.builtin.assert:
+    that:
+      - podman_quadlet_volumes_file_names is iterable
+    fail_msg: "podman_quadlet_volumes_file_names must be a list."
+
+- name: "Assert that each item in podman_quadlet_volumes_file_names is a non-empty string"
+  ansible.builtin.assert:
+    that:
+      - item | length > 0
+      - item is string
+    fail_msg: "Each item in podman_quadlet_volumes_file_names must be a non-empty string."
+  loop: "{{ podman_quadlet_volumes_file_names }}"
+
+# These steps are only required in case there are files to be published to the volumes.
+# - name: "Check that the volume files exist and are readable"
+#   ansible.builtin.stat:
+#     path: "{{ podman_quadlet_caller_role_path }}/files/{{ item }}"
+#   register: volume_file_check
+#   check_mode: true
+#   loop: "{{ podman_quadlet_volumes_file_names }}"
+
+# - name: "Assert that the volume files are readable"
+#   ansible.builtin.assert:
+#     that:
+#       - item.stat.exists
+#       - item.stat.mode | int(0, 8) & 4 != 0  # Check if the file is readable
+#     fail_msg: "The volume file '{{ item }}' must exist and be readable."
+#   loop: "{{ volume_file_check.results }}"

@@ -1,0 +1,20 @@
+---
+
+- name: Identify the active firewalld zone
+  ansible.builtin.command: firewall-cmd --get-active-zones
+  register: firewalld_active_zones
+  changed_when: false
+
+- name: Set primary active zone
+  ansible.builtin.set_fact:
+    podman_quadlet_firewall_zone: "{{ firewalld_active_zones.stdout_lines[0].split()[0] }}"
+
+- name: Open firewall ports in active zone
+  become: true
+  ansible.posix.firewalld:
+    zone: "{{ podman_quadlet_firewall_zone }}"
+    port: "{{ item }}"
+    permanent: true
+    state: enabled
+    immediate: true
+  loop: "{{ podman_quadlet_firewall_ports }}"

@@ -1,0 +1,61 @@
+- name: Converge podman-quadlet role
+  hosts: localhost
+  tasks:
+
+    # rootless
+    - name: Stop rootless nginx container # noqa: ignore-errors no-changed-when
+      become: true
+      become_user: testuser
+      ansible.builtin.shell: |
+        export XDG_RUNTIME_DIR=/run/user/$(id -u)
+        export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus
+        systemctl --user stop nginxrootless
+      ignore_errors: true
+
+    - name: Remove rootless volume # noqa: ignore-errors no-changed-when
+      become: true
+      become_user: testuser
+      ansible.builtin.shell: |
+        podman volume rm nginxrootless-volume
+      ignore_errors: true
+
+    - name: Remove rootless quadlet file # noqa: ignore-errors
+      become: true
+      become_user: testuser
+      ansible.builtin.file:
+        path: "/home/testuser/.config/containers/systemd/nginxrootless"
+        state: absent
+      ignore_errors: true
+
+    - name: Reload rootless systemd # noqa:  no-changed-when
+      become: true
+      become_user: testuser
+      ansible.builtin.shell: |
+        export XDG_RUNTIME_DIR=/run/user/$(id -u)
+        export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus
+        systemctl --user daemon-reload
+
+    # rootful
+    - name: Stop rootful nginx container # noqa: ignore-errors command-instead-of-module no-changed-when
+      become: true
+      ansible.builtin.shell: |
+        systemctl stop nginxrootful
+      ignore_errors: true
+
+    - name: Remove rootful volume # noqa: ignore-errors no-changed-when
+      become: true
+      ansible.builtin.shell: |
+        podman volume rm nginxrootful-volume
+      ignore_errors: true
+
+    - name: Remove rootful quadlet file # noqa: ignore-errors
+      become: true
+      ansible.builtin.file:
+        path: "/etc/containers/systemd/nginxrootful"
+        state: absent
+      ignore_errors: true
+
+    - name: Reload rootful systemd # noqa: command-instead-of-module no-changed-when
+      become: true
+      ansible.builtin.shell: |
+        systemctl daemon-reload

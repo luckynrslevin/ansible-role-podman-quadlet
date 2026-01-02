@@ -1,0 +1,58 @@
+---
+
+- name: Assert that podman_quadlet_rootless_user_name is a non-empty string
+  ansible.builtin.assert:
+    that:
+      - podman_quadlet_rootless_user_name  is string
+      - podman_quadlet_rootless_user_name  | length > 0
+    fail_msg: |
+      The 'name' field is required.
+      The provided value is: "{{ podman_quadlet_rootless_user_name  }}"
+      name must be a non-empty string.
+
+- name: Get rootless user info on remote host
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ podman_quadlet_rootless_user_name }}"
+  register: user_info
+
+- name: Check if user home directory exists and is a directory
+  ansible.builtin.stat:
+    path: "{{ user_info.ansible_facts.getent_passwd[podman_quadlet_rootless_user_name][4] }}"
+  register: home_dir_stat
+
+- name: Assert home directory exists and is a directory
+  ansible.builtin.assert:
+    that:
+      - home_dir_stat.stat.exists == true
+      - home_dir_stat.stat.isdir == true
+    fail_msg: "The home directory '{{ user_info.ansible_facts.getent_passwd[podman_quadlet_rootless_user_name][4] }}' does not exist or is not a directory."
+
+- name: Set home directory to a local variable
+  ansible.builtin.set_fact:
+    podman_quadlet_rootless_user_name_home_dir: "{{ user_info.ansible_facts.getent_passwd[podman_quadlet_rootless_user_name][4] }}"
+
+- name: Get UID of rootless user
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ podman_quadlet_rootless_user_name }}"
+
+- name: Save rootless user UID
+  ansible.builtin.set_fact:
+    podman_quadlet_rootless_user_id: >-
+      {{ ansible_facts.getent_passwd[podman_quadlet_rootless_user_name][1] }}
+
+- name: Check if systemd linger is enabled for rootless user
+  ansible.builtin.command:
+    cmd: "loginctl show-user {{ podman_quadlet_rootless_user_name }} --property=Linger --value"
+  register: linger_status
+  changed_when: false
+  check_mode: false
+
+- name: Assert that linger is enabled for rootless user
+  ansible.builtin.assert:
+    that:
+      - linger_status.stdout | bool
+    fail_msg: >
+      systemd linger is not enabled for user '{{ podman_quadlet_rootless_user_name }}'.
+      You can enable it with: 'loginctl enable-linger {{ podman_quadlet_rootless_user_name }}'.

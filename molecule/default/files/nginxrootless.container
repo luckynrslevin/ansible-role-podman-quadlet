@@ -1,0 +1,12 @@
+[Unit]
+Description=Nginx container
+After=network.target
+
+[Container]
+Image=docker.io/library/nginx:latest
+ContainerName=nginxrootless
+Volume=nginxrootless-volume:/usr/share/nginx/html
+PublishPort=8080:80/tcp
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,4 @@
+---
+
+- name: Create and start rootless container
+  ansible.builtin.import_tasks: rootless-container.yml

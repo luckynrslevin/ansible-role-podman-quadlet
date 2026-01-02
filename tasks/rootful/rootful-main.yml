@@ -1,0 +1,4 @@
+---
+
+- name: Create and start rootful container
+  ansible.builtin.import_tasks: rootful-container.yml

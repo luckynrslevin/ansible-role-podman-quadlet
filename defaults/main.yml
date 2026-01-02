@@ -1,0 +1,23 @@
+# roles/podman_quadlet/defaults/main.yml
+###############################################################################
+# Public API
+###############################################################################
+
+# mandatory: file name of the container quadlet file with either .container
+# or .container.j2 extension
+podman_quadlet_container_file_name: ''
+
+# mandatory: caller role path necessary to find caller_role_path/files
+# and caller_role_path/templates directory
+podman_quadlet_caller_role_path: ''
+
+# rootless user name.
+podman_quadlet_rootless_user_name: ''
+
+# optional: list of volume quadlet file names with .volume extension
+# e.g.: myapp-conf.volume
+podman_quadlet_volumes_file_names: []
+
+# optional: firewall ports
+# e.g.: 8080/tcp or 9090/upd
+podman_quadlet_firewall_ports: []

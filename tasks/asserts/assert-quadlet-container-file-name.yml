@@ -1,0 +1,36 @@
+---
+
+- name: Assert that podman_quadlet_container_file_name is a valid string and has the correct extension
+  ansible.builtin.assert:
+    that:
+      - podman_quadlet_container_file_name | length > 0
+      - podman_quadlet_container_file_name is match('^.*\.container(\.j2)?$')
+    fail_msg: >
+      The variable 'podman_quadlet_container_file_name' must be a non-empty string with a valid file extension (.container or .container.j2).
+      The provided value is: '{{ podman_quadlet_container_file_name }}'.
+
+- name: Check if the container file is a .container file and exists in the 'files' directory
+  ansible.builtin.stat:
+    path: "{{ podman_quadlet_caller_role_path }}/files/{{ podman_quadlet_container_file_name }}"
+  register: container_file_stat
+  when: podman_quadlet_container_file_name | regex_search('\.container$') is not none
+  check_mode: true
+  delegate_to: localhost
+
+- name: Set full path if container file exists in 'files/'
+  ansible.builtin.set_fact:
+    podman_quadlet_src_container_file_name_full_path: "{{ podman_quadlet_caller_role_path }}/files/{{ podman_quadlet_container_file_name }}"
+  when: container_file_stat.stat.exists | default(false)
+
+- name: Check if the container file is a .container.j2 file and exists in the 'templates' directory
+  ansible.builtin.stat:
+    path: "{{ podman_quadlet_caller_role_path }}/templates/{{ podman_quadlet_container_file_name }}"
+  register: container_j2_file_stat
+  when: podman_quadlet_container_file_name | regex_search('\.container\.j2$') is not none
+  check_mode: true
+  delegate_to: localhost
+
+- name: Set full path if container file exists in 'templates/'
+  ansible.builtin.set_fact:
+    podman_quadlet_src_container_file_name_full_path: "{{ podman_quadlet_caller_role_path }}/templates/{{ podman_quadlet_container_file_name }}"
+  when: container_j2_file_stat.stat.exists | default(false)
