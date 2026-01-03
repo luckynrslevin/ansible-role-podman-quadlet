@@ -36,7 +36,7 @@ This role is designed to leverage [podman quadlet](https://docs.podman.io/en/lat
     - role: podman-quadlet
       podman_quadlet_container_file_name: nginxrootless.container
       podman_quadlet_caller_role_path: "{{ playbook_dir }}"
-      podman_quadlet_rootless_user_name: testuser
+      podman_quadlet_rootless_user_name: nginx 
       podman_quadlet_volumes_file_names:
         - nginxrootless-volume
       podman_quadlet_firewall_ports:

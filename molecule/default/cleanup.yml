@@ -1,39 +1,52 @@
 - name: Converge podman-quadlet role
   hosts: localhost
+  connection: local
   tasks:
 
     # rootless
-    - name: Stop rootless nginx container # noqa: ignore-errors no-changed-when
+    - name: Stop nginx rootless container
       become: true
-      become_user: testuser
-      ansible.builtin.shell: |
-        export XDG_RUNTIME_DIR=/run/user/$(id -u)
-        export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus
-        systemctl --user stop nginxrootless
+      ansible.builtin.shell:
+        cmd: |
+          su - nginx -c '
+          export XDG_RUNTIME_DIR=/run/user/$(id -u)
+          export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus
+          systemctl --user stop nginxrootless
+          '
+        executable: /bin/bash
       ignore_errors: true
+      changed_when: false
 
     - name: Remove rootless volume # noqa: ignore-errors no-changed-when
       become: true
-      become_user: testuser
-      ansible.builtin.shell: |
-        podman volume rm nginxrootless-volume
+      ansible.builtin.shell:
+        cmd: |
+          su - nginx -c '
+          podman volume rm nginxrootless-volume
+          '
+        executable: /bin/bash
       ignore_errors: true
+      changed_when: false
 
     - name: Remove rootless quadlet file # noqa: ignore-errors
       become: true
-      become_user: testuser
       ansible.builtin.file:
-        path: "/home/testuser/.config/containers/systemd/nginxrootless"
+        path: "/home/nginx/.config/containers/systemd/nginxrootless"
         state: absent
       ignore_errors: true
 
     - name: Reload rootless systemd # noqa:  no-changed-when
       become: true
-      become_user: testuser
-      ansible.builtin.shell: |
-        export XDG_RUNTIME_DIR=/run/user/$(id -u)
-        export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus
-        systemctl --user daemon-reload
+      ansible.builtin.shell:
+        cmd: |
+          su - nginx -c '
+          export XDG_RUNTIME_DIR=/run/user/$(id -u)
+          export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus
+          systemctl --user daemon-reload
+          '
+        executable: /bin/bash
+      ignore_errors: true
+      changed_when: false
 
     # rootful
     - name: Stop rootful nginx container # noqa: ignore-errors command-instead-of-module no-changed-when

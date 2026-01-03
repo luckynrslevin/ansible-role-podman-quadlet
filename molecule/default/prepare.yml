@@ -1,6 +1,7 @@
 ---
 - name: Prepare test system for podman-quadlet
   hosts: localhost
+  connection: local
   become: true
   tasks:
     - name: Ensure rootless user exists

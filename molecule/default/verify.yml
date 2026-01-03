@@ -3,14 +3,16 @@
 # Molecule calls this playbook with `molecule verify`.
 - name: Verify container is running
   hosts: localhost
+  connection: local
   gather_facts: false
   tasks:
     # rootless
     - name: Check if rootless nginx container exists
       become: true
-      become_user: testuser
-      ansible.builtin.command:
-        cmd: podman ps --filter "name=nginxrootless" --format "{{ '{{' }}.Names{{ '}}' }}"
+      ansible.builtin.shell:
+        cmd: |
+          su - nginx -c 'podman ps --filter "name=nginxrootless" --format "{{ '{{' }}.Names{{ '}}' }}"'
+        executable: /bin/bash
       register: nginx_rootless_status
       changed_when: false
 
