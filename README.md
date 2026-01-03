@@ -108,3 +108,34 @@ WantedBy=multi-user.target
 ```bash
 ...
 ```
+
+### How to run tests
+
+#### Install molecule
+
+Install system prerequisites
+```bash
+sudo dnf install -y \
+  python3 \
+  python3-pip \
+  python3-virtualenv \
+  gcc \
+  libffi-devel \
+  python3-devel \
+  openssl-devel
+```
+
+Create and activate a virtual environment
+```bash
+python3 -m venv ~/.venvs/molecule
+```
+
+```bash
+source ~/.venvs/molecule/bin/activate
+```
+
+Install Molecule and plugins
+```bash
+pip install --upgrade pip
+pip install molecule ansible ansible-lint
+```
