@@ -20,7 +20,6 @@
   when:
     - podman_quadlet_container_file_name | regex_search('\.container\.j2$') is not none
   register: podman_quadlet_app_config_template
- 
 
 - name: Copy Quadlet container file (.container) to systemd directory
   become: true
