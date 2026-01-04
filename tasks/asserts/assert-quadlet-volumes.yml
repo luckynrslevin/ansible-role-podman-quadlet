@@ -31,8 +31,6 @@
       - paths (list)
   loop: "{{ podman_quadlet_volumes }}"
 
-
-
 # These steps are only required in case there are files to be published to the volumes.
 # - name: "Check that the volume files exist and are readable"
 #   ansible.builtin.stat:
