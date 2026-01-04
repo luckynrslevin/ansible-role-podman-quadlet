@@ -1,0 +1,65 @@
+---
+
+- name: Debug volume data
+  ansible.builtin.debug:
+    msg:
+      - "volume.name = {{ volume.name }}"
+      - "volume.paths = {{ volume.paths }}"
+
+- name: Get mountpoint of rootful volume
+  become: true
+  ansible.builtin.shell:
+    cmd: |
+      podman volume inspect {{ volume.name }} --format "{% raw %}{{.Mountpoint}}{% endraw %}"
+    executable: /bin/bash
+  register: rootful_volume_status
+  ignore_errors: true # noqa: ignore-errors
+  failed_when: false
+  changed_when: false  # noqa: no-changed-when
+
+- name: Assert rootful volume exists
+  ansible.builtin.assert:
+    that:
+      - volume.name in rootful_volume_status.stdout
+
+- name: Deploy paths into volume {{ volume.name }}
+  become: true
+  block:
+
+    - name: Create directories in volume {{ volume.name }}
+      ansible.builtin.file:
+        path: "{{ rootful_volume_status.stdout }}{{ item.path }}"
+        state: directory
+        owner: "{{ item.owner | default(0, true) }}"
+        group: "{{ item.group | default(0, true) }}"
+        mode: "{{ item.mode | default(omit) }}"
+      loop: "{{ volume.paths | default([]) }}"
+      when: item.state == 'directory'
+
+    - name: Ensure parent directories exist for files
+      ansible.builtin.file:
+        path: "{{ rootful_volume_status.stdout }}{{ item.path | dirname }}"
+        state: directory
+        owner: "{{ item.owner | default(0, true) }}"
+        group: "{{ item.group | default(0, true) }}"
+        mode: "0755"
+      loop: "{{ volume.paths | default([]) }}"
+      when: item.state == 'file'
+
+    - name: Copy files into volume {{ volume.name }}
+      ansible.builtin.copy:
+        src: "{{ podman_quadlet_caller_role_path }}/files/{{ volume.name }}{{ item.path }}"
+        dest: "{{ rootful_volume_status.stdout }}{{ item.path }}"
+        owner: "{{ item.owner | default(0, true) }}"
+        group: "{{ item.group | default(0, true) }}"
+        mode: "{{ item.mode | default(omit) }}"
+      loop: "{{ volume.paths | default([]) }}"
+      when: item.state == 'file'
+
+- name: Restart rootful container application
+  become: true
+  ansible.builtin.shell:  # noqa: command-instead-of-module
+    cmd: |
+      systemctl restart {{ podman_quadlet_app_name }}
+    executable: /bin/bash
+  changed_when: false # noqa: no-changed-when

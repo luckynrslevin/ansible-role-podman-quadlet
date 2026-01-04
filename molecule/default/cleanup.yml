@@ -4,7 +4,7 @@
   tasks:
 
     # rootless
-    - name: Stop nginx rootless container # noqa: ignore-errors
+    - name: Stop nginx rootless container
       become: true
       ansible.builtin.shell:
         cmd: |
@@ -14,7 +14,8 @@
           systemctl --user stop nginxrootless
           '
         executable: /bin/bash
-      ignore_errors: true
+      ignore_errors: true # noqa: ignore-errors
+      failed_when: false
       changed_when: false
 
     - name: Remove rootless volume
@@ -26,14 +27,16 @@
           '
         executable: /bin/bash
       ignore_errors: true # noqa: ignore-errors
+      failed_when: false
       changed_when: false  # noqa: no-changed-when
 
-    - name: Remove rootless quadlet file # noqa: ignore-errors
+    - name: Remove rootless quadlet file
       become: true
       ansible.builtin.file:
         path: "/home/nginx/.config/containers/systemd/nginxrootless"
         state: absent
-      ignore_errors: true
+      ignore_errors: true # noqa: ignore-errors
+      failed_when: false
 
     - name: Reload rootless systemd
       become: true
@@ -46,6 +49,7 @@
           '
         executable: /bin/bash
       ignore_errors: true # noqa: ignore-errors
+      failed_when: false
       changed_when: false  # noqa: no-changed-when
 
     # rootful
@@ -54,6 +58,7 @@
       ansible.builtin.shell: |
         systemctl stop nginxrootful
       ignore_errors: true # noqa: ignore-errors
+      failed_when: false
       changed_when: false  # noqa: no-changed-when
 
     - name: Remove rootful volume
@@ -61,6 +66,7 @@
       ansible.builtin.shell: |
         podman volume rm nginxrootful-volume
       ignore_errors: true # noqa: ignore-errors
+      failed_when: false
       changed_when: false  # noqa: no-changed-when
 
     - name: Remove rootful quadlet file
@@ -69,9 +75,12 @@
         path: "/etc/containers/systemd/nginxrootful"
         state: absent
       ignore_errors: true # noqa: ignore-errors
+      failed_when: false
 
     - name: Reload rootful systemd # noqa: command-instead-of-module
       become: true
       ansible.builtin.shell: |
         systemctl daemon-reload
+      ignore_errors: true # noqa: ignore-errors
+      failed_when: false
       changed_when: false  # noqa: no-changed-when

@@ -39,8 +39,13 @@
 
 - name: Save rootless user UID
   ansible.builtin.set_fact:
-    podman_quadlet_rootless_user_id: >-
+    podman_quadlet_rootless_user_uid: >-
       {{ ansible_facts.getent_passwd[podman_quadlet_rootless_user_name][1] }}
+
+- name: Save rootless user primary GID
+  ansible.builtin.set_fact:
+    podman_quadlet_rootless_user_gid: >-
+      {{ ansible_facts.getent_passwd[podman_quadlet_rootless_user_name][2] }}
 
 - name: Check if systemd linger is enabled for rootless user
   ansible.builtin.command:

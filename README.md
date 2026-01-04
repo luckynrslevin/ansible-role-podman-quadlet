@@ -21,7 +21,7 @@ This role is designed to leverage [podman quadlet](https://docs.podman.io/en/lat
 | **podman_quadlet_container_file_name:** | The file name of the quadlet unit file with a file extension of ``.container`` or ``.container.j2`` . | mandatory | no default |
 | **podman_quadlet_caller_role_path:** | The path where ansible should look for your configuration files / templates, e.g. also the quadlet unit file. Typically either your playbook directory, or in case you include this role to your own application role, the role path of your application role. | mandatory | no default |
 | **podman_quadlet_rootless_user_name:** |  The linux user, which will be used to run the container in rootless mode. You need to make sure the user exists before executing this role. It will not be automatically created. You also need to make sure linger is enabled for this user to be able to start the container during boot automatically ```loginctl enable-linger <username>``` | optional | no default |
-| **podman_quadlet_volumes_file_names:** | The list of volumes related to the container. | optional | no default |
+| **podman_quadlet_volumes:** | The list of volumes related to the container. | optional | no default |
 | **podman_quadlet_firewall_ports:** | The list of firewall ports that need to be enabeled. Format need to follow ``<portnumber>/<protocol>``, like e.g. ``8080/tcp`` or ``51820/udp``.| optional | no default |
 |  |  |  |  |
 
@@ -37,8 +37,14 @@ This role is designed to leverage [podman quadlet](https://docs.podman.io/en/lat
       podman_quadlet_container_file_name: nginxrootless.container
       podman_quadlet_caller_role_path: "{{ playbook_dir }}"
       podman_quadlet_rootless_user_name: nginx 
-      podman_quadlet_volumes_file_names:
-        - nginxrootless-volume
+      podman_quadlet_volumes:
+        - name: nginxrootless-volume
+          paths:
+            - path: /index.html
+              state: file
+              owner: 1001 # optional: Default is uid of the rootless user
+              group: 1001 # optional: Default is gid of the rootless user
+              mode: "0644" # optional: Default is "0644"
       podman_quadlet_firewall_ports:
         - 8080/tcp
 
@@ -72,8 +78,14 @@ WantedBy=multi-user.target
     - role: podman-quadlet
       podman_quadlet_container_file_name: nginxrootful.container
       podman_quadlet_caller_role_path: "{{ playbook_dir }}"
-      podman_quadlet_volumes_file_names:
-        - nginxrootful-volume
+      podman_quadlet_volumes:
+        - name: nginxrootful-volume
+          paths:
+            - path: /index.html
+              state: file
+              owner: 0 # optional: Default is 0
+              group: 0 # optional: Default is 0
+              mode: "0644" # optional: Default is "0644"
       podman_quadlet_firewall_ports:
         - 80/tcp
 
@@ -138,4 +150,10 @@ Install Molecule and plugins
 ```bash
 pip install --upgrade pip
 pip install molecule ansible ansible-lint
+```
+
+#### Run tests
+
+```bash
+molecule reset && rm -rf ~/.cache/molecule && molecule test
 ```

@@ -4,7 +4,7 @@ ansible:
   cfg:
     defaults:
       host_key_checking: false
-      verbosity: 2 # 1 = -v; 2 = -vv; 3 = -vvv
+      verbosity: 1 # 1 = -v; 2 = -vv; 3 = -vvv
     ssh_connection:
       pipelining: true
   env:
@@ -30,4 +30,4 @@ scenario:
     - cleanup
     - converge
     - verify
-    - cleanup
+#    - cleanup

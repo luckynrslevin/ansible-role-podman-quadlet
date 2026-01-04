@@ -2,3 +2,9 @@
 
 - name: Create and start rootless container
   ansible.builtin.import_tasks: rootless-container.yml
+
+- name: Deploy files to volumes
+  ansible.builtin.include_tasks: rootless-volumes.yml
+  loop: "{{ podman_quadlet_volumes }}"
+  loop_control:
+    loop_var: volume

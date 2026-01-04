@@ -15,8 +15,33 @@ podman_quadlet_caller_role_path: ''
 podman_quadlet_rootless_user_name: ''
 
 # optional: list of volume quadlet file names with .volume extension
-# e.g.: myapp-conf.volume
-podman_quadlet_volumes_file_names: []
+# --------------------------------------------------------------------------- #
+# volumes example structure:
+# --------------------------------------------------------------------------- #
+# podman_quadlet_volumes:
+#   - name: volume1
+#     paths:
+#       - path: /data
+#         state: directory
+#         owner: 1000
+#         group: 1000
+#         mode: "0755"
+#
+#       - path: /data/config.yml
+#         state: file
+#         owner: 1000
+#         group: 1000
+#         mode: "0640"
+#
+#   - name: volume2
+#     paths:
+#       - path: /cache
+#         state: directory
+#         owner: 999
+#         group: 999
+#         mode: "0700"
+# --------------------------------------------------------------------------- #
+podman_quadlet_volumes: []
 
 # optional: firewall ports
 # e.g.: 8080/tcp or 9090/upd

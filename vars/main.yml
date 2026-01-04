@@ -1,5 +1,8 @@
-# Rootless user id
-podman_quadlet_rootless_user_id: ''
+# Rootless user uid
+podman_quadlet_rootless_user_uid: ''
+
+# Rootless user gid
+podman_quadlet_rootless_user_gid: ''
 
 # Full path name of the container src file/template on localhost
 podman_quadlet_src_container_file_name_full_path: ''
