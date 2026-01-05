@@ -7,7 +7,7 @@
       - podman_quadlet_rootless_user_name  | length > 0
     fail_msg: |
       The 'name' field is required.
-      The provided value is: "{{ podman_quadlet_rootless_user_name  }}"
+      The provided value is: "{{ podman_quadlet_rootless_user_name }}"
       name must be a non-empty string.
 
 - name: Get rootless user info on remote host
