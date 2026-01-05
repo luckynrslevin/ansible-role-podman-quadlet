@@ -36,6 +36,19 @@
           - "'Welcome to nginx rootless container test page!' in nginx_rootless_response.content"
         fail_msg: "Nginx page did not contain expected content!"
 
+    - name: Check rootless nginx HTTP response for rendered template
+      ansible.builtin.uri:
+        url: "http://{{ inventory_hostname }}:8080/template.html"
+        return_content: true
+        status_code: 200
+      register: nginx_rootless_response
+
+    - name: Assert the rootless nginx template page content
+      ansible.builtin.assert:
+        that:
+          - "'Welcome to nginx rootless container template test page!' in nginx_rootless_response.content"
+        fail_msg: "Rootless template page did not contain expected content!"
+
     # rootful
     - name: Check if rootful nginx container exists
       become: true
@@ -63,3 +76,16 @@
         that:
           - "'Welcome to nginx rootful container test page!' in nginx_rootful_response.content"
         fail_msg: "Nginx page did not contain expected content!"
+
+    - name: Check rootless nginx HTTP response for rendered template
+      ansible.builtin.uri:
+        url: "http://{{ inventory_hostname }}/template/template.html"
+        return_content: true
+        status_code: 200
+      register: nginx_rootless_response
+
+    - name: Assert the rootless nginx template page content
+      ansible.builtin.assert:
+        that:
+          - "'Welcome to nginx rootful container template test page!' in nginx_rootless_response.content"
+        fail_msg: "Rootful template page did not contain expected content!"

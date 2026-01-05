@@ -26,9 +26,12 @@
   become: true
   block:
 
+    # --------------------
+    # Directories
+    # --------------------
     - name: Create directories in volume {{ volume.name }}
       ansible.builtin.file:
-        path: "{{ rootful_volume_status.stdout }}{{ item.path }}"
+        path: "{{ rootful_volume_status.stdout }}/{{ item.path | regex_replace('^/+', '') }}"
         state: directory
         owner: "{{ item.owner | default(0, true) }}"
         group: "{{ item.group | default(0, true) }}"
@@ -36,25 +39,44 @@
       loop: "{{ volume.paths | default([]) }}"
       when: item.state == 'directory'
 
-    - name: Ensure parent directories exist for files
+    # --------------------
+    # Parent directories for files & templates
+    # --------------------
+    - name: Ensure parent directories exist
       ansible.builtin.file:
-        path: "{{ rootful_volume_status.stdout }}{{ item.path | dirname }}"
+        path: "{{ rootful_volume_status.stdout }}/{{ item.path | regex_replace('^/+', '') | dirname }}"
         state: directory
         owner: "{{ item.owner | default(0, true) }}"
         group: "{{ item.group | default(0, true) }}"
         mode: "0755"
       loop: "{{ volume.paths | default([]) }}"
-      when: item.state == 'file'
+      when: item.state in ['file', 'template']
 
+    # --------------------
+    # Plain files
+    # --------------------
     - name: Copy files into volume {{ volume.name }}
       ansible.builtin.copy:
-        src: "{{ podman_quadlet_caller_role_path }}/files/{{ volume.name }}{{ item.path }}"
-        dest: "{{ rootful_volume_status.stdout }}{{ item.path }}"
+        src: "{{ podman_quadlet_caller_role_path }}/files/{{ volume.name }}/{{ item.path | regex_replace('^/+', '') }}"
+        dest: "{{ rootful_volume_status.stdout }}/{{ item.path | regex_replace('^/+', '') }}"
         owner: "{{ item.owner | default(0, true) }}"
         group: "{{ item.group | default(0, true) }}"
         mode: "{{ item.mode | default(omit) }}"
       loop: "{{ volume.paths | default([]) }}"
       when: item.state == 'file'
+
+    # --------------------
+    # Templates
+    # --------------------
+    - name: Render templates into volume {{ volume.name }}
+      ansible.builtin.template:
+        src: "{{ podman_quadlet_caller_role_path }}/templates/{{ volume.name }}/{{ item.path | regex_replace('^/+', '') }}"
+        dest: "{{ rootful_volume_status.stdout }}/{{ item.path | regex_replace('^/+', '') | regex_replace('\\.j2$', '') }}"
+        owner: "{{ item.owner | default(0, true) }}"
+        group: "{{ item.group | default(0, true) }}"
+        mode: "{{ item.mode | default(omit) }}"
+      loop: "{{ volume.paths | default([]) }}"
+      when: item.state == 'template'
 
 - name: Restart rootful container application
   become: true

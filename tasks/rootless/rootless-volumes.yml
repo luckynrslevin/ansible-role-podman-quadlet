@@ -1,10 +1,10 @@
 ---
 
-- name: Debug volume data
-  ansible.builtin.debug:
-    msg:
-      - "volume.name = {{ volume.name }}"
-      - "volume.paths = {{ volume.paths }}"
+# - name: Debug volume data
+#   ansible.builtin.debug:
+#     msg:
+#       - "volume.name = {{ volume.name }}"
+#       - "volume.paths = {{ volume.paths }}"
 
 - name: Get mountpoint of rootless volume
   become: true
@@ -27,9 +27,12 @@
   become: true
   block:
 
+    # --------------------
+    # Directories
+    # --------------------
     - name: Create directories in volume {{ volume.name }}
       ansible.builtin.file:
-        path: "{{ rootless_volume_status.stdout }}{{ item.path }}"
+        path: "{{ rootless_volume_status.stdout }}/{{ item.path | regex_replace('^/+', '') }}"
         state: directory
         owner: "{{ item.owner | default(podman_quadlet_rootless_user_uid, true) }}"
         group: "{{ item.group | default(podman_quadlet_rootless_user_gid, true) }}"
@@ -37,25 +40,44 @@
       loop: "{{ volume.paths | default([]) }}"
       when: item.state == 'directory'
 
-    - name: Ensure parent directories exist for files
+    # --------------------
+    # Parent directories for files/templates
+    # --------------------
+    - name: Ensure parent directories exist
       ansible.builtin.file:
-        path: "{{ rootless_volume_status.stdout }}{{ item.path | dirname }}"
+        path: "{{ rootless_volume_status.stdout }}/{{ item.path | regex_replace('^/+', '') | dirname }}"
         state: directory
         owner: "{{ item.owner | default(podman_quadlet_rootless_user_uid, true) }}"
         group: "{{ item.group | default(podman_quadlet_rootless_user_gid, true) }}"
         mode: "0755"
       loop: "{{ volume.paths | default([]) }}"
-      when: item.state == 'file'
+      when: item.state in ['file', 'template']
 
+    # --------------------
+    # Plain files
+    # --------------------
     - name: Copy files into volume {{ volume.name }}
       ansible.builtin.copy:
-        src: "{{ podman_quadlet_caller_role_path }}/files/{{ volume.name }}{{ item.path }}"
-        dest: "{{ rootless_volume_status.stdout }}{{ item.path }}"
+        src: "{{ podman_quadlet_caller_role_path }}/files/{{ volume.name }}/{{ item.path | regex_replace('^/+', '') }}"
+        dest: "{{ rootless_volume_status.stdout }}/{{ item.path | regex_replace('^/+', '') }}"
         owner: "{{ item.owner | default(podman_quadlet_rootless_user_uid, true) }}"
         group: "{{ item.group | default(podman_quadlet_rootless_user_gid, true) }}"
         mode: "{{ item.mode | default(omit) }}"
       loop: "{{ volume.paths | default([]) }}"
       when: item.state == 'file'
+
+    # --------------------
+    # Templates
+    # --------------------
+    - name: Render templates into volume {{ volume.name }}
+      ansible.builtin.template:
+        src: "{{ podman_quadlet_caller_role_path }}/templates/{{ volume.name }}/{{ item.path | regex_replace('^/+', '') }}"
+        dest: "{{ rootless_volume_status.stdout }}/{{ item.path | regex_replace('^/+', '') | regex_replace('\\.j2$', '') }}"
+        owner: "{{ item.owner | default(podman_quadlet_rootless_user_uid, true) }}"
+        group: "{{ item.group | default(podman_quadlet_rootless_user_gid, true) }}"
+        mode: "{{ item.mode | default(omit) }}"
+      loop: "{{ volume.paths | default([]) }}"
+      when: item.state == 'template'
 
 - name: Restart rootless container application
   become: true

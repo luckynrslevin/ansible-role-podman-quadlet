@@ -12,8 +12,10 @@
       podman_quadlet_volumes:
         - name: nginxrootless-volume
           paths:
-            - path: /index.html
+            - path: index.html
               state: file
+            - path: template.html.j2
+              state: template
       podman_quadlet_firewall_ports:
         - 8080/tcp
 
@@ -23,7 +25,9 @@
       podman_quadlet_volumes:
         - name: nginxrootful-volume
           paths:
-            - path: /index.html
+            - path: index.html
               state: file
+            - path: /template/template.html.j2
+              state: template
       podman_quadlet_firewall_ports:
         - 80/tcp
