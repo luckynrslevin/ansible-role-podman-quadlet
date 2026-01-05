@@ -2,7 +2,7 @@
 
 ## Description
 
-This role is designed to leverage [podman quadlet](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html) functionality to easily install **single containers** on a system in rootless or rootful mode. Due to usage of podman quadlet, containers are fully managed via systemd. The goal is to keep it as simple as possible and lower effort to install container based applications on a linux system. It is indended to setup home servers or development environmenst, not to deploy containers on scaling infrastructure like kubernetes.
+This role is designed to leverage [podman quadlet](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html) functionality to easily install **single containers** on a system in rootless or rootful mode. Due to usage of podman quadlet, containers are fully managed via systemd. The goal is to keep it as simple as possible and lower effort to install container based applications on a linux system. It is intended to setup home servers or development environments, not to deploy containers on scaling infrastructure like kubernetes.
 
 ## Requirements
 
