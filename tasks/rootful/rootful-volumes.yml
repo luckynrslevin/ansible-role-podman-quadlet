@@ -1,10 +1,10 @@
 ---
 
-- name: Debug volume data
-  ansible.builtin.debug:
-    msg:
-      - "volume.name = {{ volume.name }}"
-      - "volume.paths = {{ volume.paths }}"
+# - name: Debug volume data
+#   ansible.builtin.debug:
+#     msg:
+#       - "volume.name = {{ volume.name }}"
+#       - "volume.paths = {{ volume.paths }}"
 
 - name: Get mountpoint of rootful volume
   become: true
