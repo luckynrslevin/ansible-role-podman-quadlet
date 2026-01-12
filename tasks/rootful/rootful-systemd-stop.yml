@@ -1,0 +1,6 @@
+- name: Stop rootful container application
+  become: true
+  ansible.builtin.systemd:
+    name: "{{ podman_quadlet_app_name }}"
+    state: stopped
+  changed_when: false  # noqa: no-changed-when

@@ -6,28 +6,30 @@
   connection: local
   roles:
     - role: podman_quadlet
-      podman_quadlet_container_file_name: nginxrootless.container
-      podman_quadlet_caller_role_path: "{{ playbook_dir }}"
+      podman_quadlet_app_name: nginxrootless
       podman_quadlet_rootless_user_name: nginx
-      podman_quadlet_volumes:
-        - name: nginxrootless-volume
-          paths:
-            - path: index.html
-              state: file
-            - path: template.html.j2
-              state: template
+      podman_quadlet_files_templates_src_path: "{{ playbook_dir }}"
+      podman_quadlet_file_names:
+        - nginxrootless.container.j2
+        - nginxrootless.volume
+      podman_quadlet_volumes_files_to_stage:
+        - name: nginxrootless
+          files:
+            - src: index.html
+            - src: template.html.j2
       podman_quadlet_firewall_ports:
         - 8080/tcp
 
     - role: podman_quadlet
-      podman_quadlet_container_file_name: nginxrootful.container
-      podman_quadlet_caller_role_path: "{{ playbook_dir }}"
-      podman_quadlet_volumes:
-        - name: nginxrootful-volume
-          paths:
-            - path: index.html
-              state: file
-            - path: /template/template.html.j2
-              state: template
+      podman_quadlet_app_name: nginxrootful
+      podman_quadlet_files_templates_src_path: "{{ playbook_dir }}"
+      podman_quadlet_file_names:
+        - nginxrootful.container
+        - nginxrootful.volume
+      podman_quadlet_volumes_files_to_stage:
+        - name: nginxrootful
+          files:
+            - src: index.html
+            - src: /template/template.html.j2
       podman_quadlet_firewall_ports:
         - 80/tcp

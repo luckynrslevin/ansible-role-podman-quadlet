@@ -1,0 +1,90 @@
+- name: Assert podman_quadlet_file_names is a list
+  ansible.builtin.assert:
+    that:
+      - podman_quadlet_file_names is iterable
+    fail_msg: "podman_quadlet_file_names must be a list of quadlet files."
+
+- name: Assert quadlet file names are valid
+  ansible.builtin.assert:
+    that:
+      - item | length > 0
+      - item is match('^.+\.(container|pod|volume)(\.j2)?$')
+    fail_msg: >-
+      Invalid quadlet file name '{{ item }}'.
+      Must end with .container, .pod, or .volume (optionally .j2).
+  loop: "{{ podman_quadlet_file_names }}"
+
+- name: Assert at least one .container file is present
+  ansible.builtin.assert:
+    that:
+      - podman_quadlet_file_names
+        | select("match", ".*\\.container(\\.j2)?$")
+        | list
+        | length > 0
+    fail_msg: >
+      You must provide at least one .container or .container.j2 quadlet file
+      in podman_quadlet_file_names.
+      Current list: {{ podman_quadlet_file_names }}
+
+- name: Initialize resolved quadlet files list
+  ansible.builtin.set_fact:
+    podman_quadlet_resolved_files: []
+
+- name: Check quadlet files in files/quadlets/
+  ansible.builtin.stat:
+    path: "{{ podman_quadlet_files_templates_src_path }}/files/quadlets/{{ item }}"
+  register: quadlet_files_stat
+  loop: "{{ podman_quadlet_file_names }}"
+  when: not item.endswith('.j2')
+  delegate_to: localhost
+  check_mode: true
+
+- name: Check quadlet templates in templates/quadlets/
+  ansible.builtin.stat:
+    path: "{{ podman_quadlet_files_templates_src_path }}/templates/quadlets/{{ item }}"
+  register: quadlet_templates_stat
+  loop: "{{ podman_quadlet_file_names }}"
+  when: item.endswith('.j2')
+  delegate_to: localhost
+  check_mode: true
+
+- name: Build resolved quadlet files list
+  ansible.builtin.set_fact:
+    podman_quadlet_resolved_files: >-
+      {{ podman_quadlet_resolved_files + [resolved_item] }}
+  vars:
+    is_template: "{{ item.item.endswith('.j2') }}"
+    resolved_item:
+      name: "{{ item.item }}"
+      unit_type: >-
+        {{ item.item
+           | regex_replace('\.j2$', '')
+           | regex_replace('^.*\.', '') }}
+      is_template: "{{ is_template }}"
+      src: >-
+        {{
+          podman_quadlet_files_templates_src_path ~
+          ('/templates/quadlets/' if is_template else '/files/quadlets/') ~
+          item.item
+        }}
+  loop: >-
+    {{
+      (quadlet_files_stat.results | default([])) +
+      (quadlet_templates_stat.results | default([]))
+    }}
+  when:
+    - item.stat is defined
+    - item.stat.exists
+
+- name: Debug resolved quadlet files
+  ansible.builtin.debug:
+    var: podman_quadlet_resolved_files
+
+- name: Assert all quadlet files were found
+  ansible.builtin.assert:
+    that:
+      - podman_quadlet_resolved_files | length == podman_quadlet_file_names | length
+    fail_msg: >-
+      One or more quadlet files were not found in files/quadlets or templates/quadlets.
+      Requested: {{ podman_quadlet_file_names }}
+      Found: {{ podman_quadlet_resolved_files | map(attribute='name') | list }}

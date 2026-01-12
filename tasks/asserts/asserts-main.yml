@@ -3,18 +3,21 @@
 - name: "Assert environment"
   ansible.builtin.import_tasks: asserts/assert-environment.yml
 
-- name: "Assert rootless user"
-  ansible.builtin.import_tasks: asserts/assert-rootless-user.yml
+- name: "Assert public API variable: podman_quadlet_app_name"
+  ansible.builtin.import_tasks: asserts/assert-app-name.yml
+
+- name: "Assert public API variable: podman_quadlet_files_templates_src_path"
+  ansible.builtin.import_tasks: asserts/assert-files-templates-src-path.yml
+
+- name: "Assert public API variable: podman_quadlet_file_names"
+  ansible.builtin.import_tasks: asserts/assert-quadlet-file-names.yml
+
+- name: "Assert public API variable: podman_quadlet_volumes_files_to_stage"
+  ansible.builtin.import_tasks: asserts/assert-volumes-files-to-stage.yml
+
+- name: "Assert public API variable: podman_quadlet_rootless_user_name"
+  ansible.builtin.import_tasks: asserts/assert-rootless-user-name.yml
   when: podman_quadlet_rootless_user_name | length > 0
-
-- name: "Assert public API variable: podman_quadlet_caller_role_path"
-  ansible.builtin.import_tasks: asserts/assert-caller-role-path.yml
-
-- name: "Assert public API variable: podman_quadlet_container_file_name"
-  ansible.builtin.import_tasks: asserts/assert-quadlet-container-file-name.yml
-
-- name: "Assert public API variable: podman_quadlet_volumes"
-  ansible.builtin.import_tasks: asserts/assert-quadlet-volumes.yml
 
 - name: "Assert public API variable: podman_quadlet_firewall_ports"
   ansible.builtin.import_tasks: asserts/assert-firewall-ports.yml

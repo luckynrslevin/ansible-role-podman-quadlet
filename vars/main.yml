@@ -1,17 +1,7 @@
-# Rootless user uid
-podman_quadlet_rootless_user_uid: ''
+---
 
-# Rootless user gid
-podman_quadlet_rootless_user_gid: ''
-
-# Full path name of the container src file/template on localhost
-podman_quadlet_src_container_file_name_full_path: ''
-
-# Full path name of the systemd folder on remote system
-podman_quadlet_systemd_dir: ''
-
-# Application name set in tasks/main.yml based on container file name
-podman_quadlet_app_name: ''
-
-# Firewall status set in asserts/assert-firewall.yml
-podman_quadlet_firewall_status: ''
+# Quadlet file types
+podman_quadlet_unit_types:
+  - container
+  - pod
+  - volume

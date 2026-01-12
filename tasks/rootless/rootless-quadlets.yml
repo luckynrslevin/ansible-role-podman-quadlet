@@ -1,0 +1,63 @@
+---
+
+- name: Set full systemd direcotory path for rootless user
+  ansible.builtin.set_fact:
+    podman_quadlet_systemd_dir: "{{ podman_quadlet_rootless_user_name_home_dir }}/.config/containers/systemd"
+
+- name: Ensure Podman Quadlet systemd directory for rootless user
+  become: true
+  ansible.builtin.file:
+    path: "{{ podman_quadlet_systemd_dir }}/{{ podman_quadlet_app_name }}"
+    state: directory
+    mode: "0700"
+    owner: "{{ podman_quadlet_rootless_user_name }}"
+    group: "{{ podman_quadlet_rootless_user_name }}"
+
+- name: Copy quadlet files and templates to remote systemd directory
+  become: true
+  block:
+
+    - name: Render template quadlets (.j2)
+      ansible.builtin.template:
+        src: "{{ item.src }}"
+        dest: "{{ podman_quadlet_systemd_dir }}/{{ podman_quadlet_app_name }}/{{ item.name | regex_replace('\\.j2$', '') }}"
+        owner: "{{ podman_quadlet_rootless_user_name }}"
+        group: "{{ podman_quadlet_rootless_user_name }}"
+        mode: "0600"
+      loop: "{{ podman_quadlet_resolved_files }}"
+      loop_control:
+        label: "{{ item.name }}"
+      when: item.is_template
+
+    - name: Copy plain quadlet files
+      ansible.builtin.copy:
+        src: "{{ item.src }}"
+        dest: "{{ podman_quadlet_systemd_dir }}/{{ podman_quadlet_app_name }}/{{ item.name }}"
+        owner: "{{ podman_quadlet_rootless_user_name }}"
+        group: "{{ podman_quadlet_rootless_user_name }}"
+        mode: "0600"
+      loop: "{{ podman_quadlet_resolved_files }}"
+      loop_control:
+        label: "{{ item.name }}"
+      when: not item.is_template
+
+- name: Validate quadlet unit files
+  become: true
+  ansible.builtin.shell:
+    cmd: |
+      su - {{ podman_quadlet_rootless_user_name }} -c '
+      export XDG_RUNTIME_DIR=/run/user/$(id -u)
+      export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus
+      /usr/lib/systemd/system-generators/podman-system-generator --user --dryrun
+      '
+    executable: /bin/bash
+  register: podman_quadlet_systemd_validation_result
+  changed_when: false # noqa: no-changed-when
+
+- name: Validation failed
+  ansible.builtin.debug:
+    msg: >
+      Please check the syntax of your quadlet unit file.
+      See section "debugging unit files" in
+      https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html
+  when: podman_quadlet_systemd_validation_result.rc != 0

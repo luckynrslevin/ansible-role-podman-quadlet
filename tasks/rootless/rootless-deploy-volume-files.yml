@@ -1,0 +1,91 @@
+- name: Deploy files into rootless Podman volumes
+  become: true
+  vars:
+    possible_volume_names:
+      - "{{ volume.name }}"
+      - "systemd-{{ volume.name }}"
+  block:
+
+    - name: Get mountpoint of rootless volume
+      ansible.builtin.shell: >
+        su - {{ podman_quadlet_rootless_user_name }} -c
+        'podman volume inspect {{ item }} --format "{{ "{{" }}.Mountpoint{{ "}}" }}"'
+      register: volume_inspect_results
+      loop: "{{ possible_volume_names }}"
+      loop_control:
+        label: "{{ item }}"
+      ignore_errors: true
+      failed_when: false
+      changed_when: false
+
+    - name: Pick first existing volume mountpoint
+      ansible.builtin.set_fact:
+        rootless_volume_status: >-
+          {{ volume_inspect_results.results
+             | selectattr('stdout', 'defined')
+             | selectattr('stdout', 'ne', '')
+             | first }}
+
+    - name: Assert rootless volume exists
+      ansible.builtin.assert:
+        that:
+          - rootless_volume_status is defined
+          - rootless_volume_status.stdout | length > 0
+        fail_msg: "Podman volume '{{ volume.name }}' or 'systemd-{{ volume.name }}' does not exist or has no mountpoint."
+
+    - name: Deploy files into volume {{ volume.name }}
+      become: true
+      block:
+
+        # --------------------
+        # Ensure parent directories exist
+        # --------------------
+        - name: Ensure parent directories exist for all files/templates
+          ansible.builtin.file:
+            path: "{{ rootless_volume_status.stdout }}/{{ item.src | regex_replace('^/+', '') | dirname }}"
+            state: directory
+            owner: "{{ item.owner | default(podman_quadlet_rootless_user_uid, true) }}"
+            group: "{{ item.group | default(podman_quadlet_rootless_user_gid, true) }}"
+            mode: "0755"
+          loop: "{{ volume.files | default([]) }}"
+          when: item.src is string and (not item.src.endswith('/') )
+
+        # --------------------
+        # Directories
+        # --------------------
+        - name: Create directories in volume {{ volume.name }}
+          ansible.builtin.file:
+            path: "{{ rootless_volume_status.stdout }}/{{ item.src | regex_replace('^/+', '') | regex_replace('/$', '') }}"
+            state: directory
+            owner: "{{ item.owner | default(podman_quadlet_rootless_user_uid, true) }}"
+            group: "{{ item.group | default(podman_quadlet_rootless_user_gid, true) }}"
+            mode: "{{ item.mode | default('0755') }}"
+          loop: "{{ volume.files | default([]) }}"
+          when: item.src is string and (item.src.endswith('/') or item.state | default('') == 'directory')
+
+        # --------------------
+        # Templates (auto-detect .j2)
+        # --------------------
+        - name: Render templates into volume {{ volume.name }}
+          ansible.builtin.template:
+            src: "{{ podman_quadlet_files_templates_src_path }}/templates/volumes/{{ volume.name }}/{{ item.src | regex_replace('^/+', '') }}"
+            dest: "{{ rootless_volume_status.stdout }}/{{ item.src | regex_replace('^/+', '') | regex_replace('\\.j2$', '') }}"
+            owner: "{{ item.owner | default(podman_quadlet_rootless_user_uid, true) }}"
+            group: "{{ item.group | default(podman_quadlet_rootless_user_gid, true) }}"
+            mode: "{{ item.mode | default('0644') }}"
+          loop: "{{ volume.files | default([]) }}"
+          when: item.src is string and item.src.endswith('.j2')
+
+        # --------------------
+        # Plain files (non-templates)
+        # --------------------
+        - name: Copy plain files into volume {{ volume.name }}
+          ansible.builtin.copy:
+            src: "{{ podman_quadlet_files_templates_src_path }}/files/volumes/{{ volume.name }}/{{ item.src | regex_replace('^/+', '') }}"
+            dest: "{{ rootless_volume_status.stdout }}/{{ item.src | regex_replace('^/+', '') }}"
+            owner: "{{ item.owner | default(podman_quadlet_rootless_user_uid, true) }}"
+            group: "{{ item.group | default(podman_quadlet_rootless_user_gid, true) }}"
+            mode: "{{ item.mode | default('0644') }}"
+            remote_src: false
+          loop: "{{ volume.files | default([]) }}"
+          when: item.src is string and not item.src.endswith('.j2') and not (item.src.endswith('/') or item.state | default('') == 'directory')

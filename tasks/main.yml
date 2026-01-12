@@ -3,10 +3,6 @@
 - name: "Assert inputs for podman_quadlet"
   ansible.builtin.include_tasks: asserts/asserts-main.yml
 
-- name: Set application name based on container file name
-  ansible.builtin.set_fact:
-    podman_quadlet_app_name: "{{ podman_quadlet_container_file_name | regex_replace('(\\.container|\\.container\\.j2)$', '') }}"
-
 - name: Conditionally include task to configure firewall, before start of containers
   ansible.builtin.include_tasks: firewall/firewall-main.yml
   when: podman_quadlet_firewall_status == 'running'

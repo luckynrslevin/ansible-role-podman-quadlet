@@ -57,7 +57,7 @@
     # --------------------
     - name: Copy files into volume {{ volume.name }}
       ansible.builtin.copy:
-        src: "{{ podman_quadlet_caller_role_path }}/files/{{ volume.name }}/{{ item.path | regex_replace('^/+', '') }}"
+        src: "{{ podman_quadlet_files_templates_src_path }}/files/{{ volume.name }}/{{ item.path | regex_replace('^/+', '') }}"
         dest: "{{ rootful_volume_status.stdout }}/{{ item.path | regex_replace('^/+', '') }}"
         owner: "{{ item.owner | default(0, true) }}"
         group: "{{ item.group | default(0, true) }}"
@@ -70,7 +70,7 @@
     # --------------------
     - name: Render templates into volume {{ volume.name }}
       ansible.builtin.template:
-        src: "{{ podman_quadlet_caller_role_path }}/templates/{{ volume.name }}/{{ item.path | regex_replace('^/+', '') }}"
+        src: "{{ podman_quadlet_files_templates_src_path }}/templates/{{ volume.name }}/{{ item.path | regex_replace('^/+', '') }}"
         dest: "{{ rootful_volume_status.stdout }}/{{ item.path | regex_replace('^/+', '') | regex_replace('\\.j2$', '') }}"
         owner: "{{ item.owner | default(0, true) }}"
         group: "{{ item.group | default(0, true) }}"

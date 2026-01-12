@@ -1,10 +1,19 @@
 ---
 
-- name: Create and start rootful container
-  ansible.builtin.import_tasks: rootful-container.yml
+- name: Copy/Render quadlet unit files/templates
+  ansible.builtin.import_tasks: rootful-quadlets.yml
 
-- name: Deploy files to volumes
-  ansible.builtin.include_tasks: rootful-volumes.yml
-  loop: "{{ podman_quadlet_volumes }}"
+- name: Initial start of the rootful container to create the volumes
+  ansible.builtin.import_tasks: rootful-systemd-restart.yml
+
+- name: Stop the rootful container, to be able to deploy files to the volumes
+  ansible.builtin.import_tasks: rootful-systemd-stop.yml
+
+- name: Deploy files into all Podman quadlet volumes
+  ansible.builtin.include_tasks: rootful-deploy-volume-files.yml
+  loop: "{{ podman_quadlet_volumes_files_to_stage | default([]) }}"
   loop_control:
     loop_var: volume
+
+- name: Restart of the rootful container
+  ansible.builtin.import_tasks: rootful-systemd-restart.yml

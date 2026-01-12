@@ -3,46 +3,124 @@
 # Public API
 ###############################################################################
 
-# mandatory: file name of the container quadlet file with either .container
-# or .container.j2 extension
-podman_quadlet_container_file_name: ''
+###############################################################################
+podman_quadlet_app_name: ''
+###############################################################################
+# mandatory: the application name
+###############################################################################
 
-# mandatory: caller role path necessary to find caller_role_path/files
-# and caller_role_path/templates directory
-podman_quadlet_caller_role_path: ''
+###############################################################################
+podman_quadlet_files_templates_src_path: ''
+###############################################################################
+# mandatory: Root path of files and templates folder, containing:
+# <podman_quadlet_files_templates_src_path>
+#   |- files
+#   |    |- quadlets
+#   |    |      |- application.pod
+#   |    |      |- application-db.container
+#   |    |      |- application-db-conf.volume
+#   |    |      |- application-web-log.volume
+#   |    |      |- ...
+#   |    |- volumes
+#   |           |- application-db-conf
+#   |           |      |- app-db-conf.cfg
+#   |           |- application-web-log
+#   |                  |- logs-rotate.cfg
+#   |- templates
+#        |- quadlets
+#        |      |- application-web.container.j2
+#        |      |- ...
+#        |- volumes
+#               |- application-web-log
+#                     |- logging.cfg.j2
+#
+###############################################################################
 
-# rootless user name.
-podman_quadlet_rootless_user_name: ''
+###############################################################################
+podman_quadlet_file_names: ''
+###############################################################################
+# mandatory: a list of podman quadlet file names
+# Currently supported quadlets:
+#   $name.pod or $name.pod.j2
+#   $name.container or $name.container.j2
+#   $name.volume or $name.volume.j2
+# E.g.:
+# podman_quadlet_file_names:
+#   - application.pod
+#   - application-db.container
+#   - application-web.container.j2
+#   - application-db-conf.volume
+#   - application-web-log.volume
+###############################################################################
 
-# optional: list of volume quadlet file names with .volume extension
+###############################################################################
+podman_quadlet_volumes_files_to_stage: []
+###############################################################################
+# optional: dict of files per volume to be staged
 # --------------------------------------------------------------------------- #
 # volumes example structure:
 # --------------------------------------------------------------------------- #
-# podman_quadlet_volumes:
-#   - name: volume1
-#     paths:
-#       - path: /data
-#         state: directory
-#         owner: 1000
-#         group: 1000
-#         mode: "0755"
+# podman_quadlet_volumes_files_to_stage:
+#   - name: application-web-log
+#     files:
+#       - src: app-db-conf.cfg
+#         mode: "0600" (Default: 0644)
+#         dest: /foo/bar/app-db-conf.cfg (Defailt: same as src)
+#         state: file (Default: file for files and templates. Other possible value: directory )
+#         owner: 0 (Deafult: UID of the current user)
+#         group: 0 (Deafult: Main GID of the current user)
+#         mode: "0600" (Default for files: 0644; Default for directories: "0755")
 #
-#       - path: /data/config.yml
-#         state: file
-#         owner: 1000
-#         group: 1000
-#         mode: "0640"
-#
-#   - name: volume2
-#     paths:
-#       - path: /cache
+#       - src: peers/
 #         state: directory
-#         owner: 999
-#         group: 999
 #         mode: "0700"
-# --------------------------------------------------------------------------- #
-podman_quadlet_volumes: []
+#
+#       - src: peers/peer1.conf.j2
+#         state: template
+#         mode: "0600"
+#
+###############################################################################
 
-# optional: firewall ports
-# e.g.: 8080/tcp or 9090/upd
+###############################################################################
+podman_quadlet_rootless_user_name: ''
+###############################################################################
+# optional: Linux user name for rootless container.
+###############################################################################
+
+###############################################################################
 podman_quadlet_firewall_ports: []
+###############################################################################
+# optional: firewall ports to manage
+# e.g.: 8080/tcp or 9090/upd
+# podman_quadlet_firewall_ports:
+#   - 8080/tcp
+#   - 9090/upd
+#   - 32768-60999/tcp
+#   - 32768-60999/udp
+###############################################################################
+
+###############################################################################
+# Internally computed by the role - no need to set something
+###############################################################################
+# Rootless user uid
+podman_quadlet_rootless_user_uid: ''
+
+# Rootless user gid
+podman_quadlet_rootless_user_gid: ''
+
+# Full path name of the container src file/template on localhost
+podman_quadlet_src_container_file_name_full_path: ''
+
+# Full path name of the systemd folder on remote system
+# set in tasks/
+podman_quadlet_systemd_dir: ''
+
+# Firewall status set in asserts/assert-firewall.yml
+podman_quadlet_firewall_status: ''
+
+# List of the full path name of all quadlet files
+podman_quadlet_resolved_files: []
+
+# List of the full path name of all files to be deployed to volumes
+# Set in tasks/asserts/
+podman_quadlet_resolved_volume_files: []

@@ -30,4 +30,4 @@ scenario:
     - cleanup
     - converge
     - verify
-#    - cleanup
+    - cleanup

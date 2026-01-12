@@ -5,7 +5,7 @@ After=network.target
 [Container]
 Image=docker.io/library/nginx:latest
 ContainerName=nginxrootful
-Volume=nginxrootful-volume:/usr/share/nginx/html
+Volume=nginxrootful.volume:/usr/share/nginx/html
 PublishPort=80:80/tcp
 
 [Install]

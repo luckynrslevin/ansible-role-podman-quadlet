@@ -1,0 +1,89 @@
+- name: Deploy files into rootful Podman volumes
+  become: true
+  vars:
+    possible_volume_names:
+      - "{{ volume.name }}"
+      - "systemd-{{ volume.name }}"
+  block:
+
+    - name: Inspect possible rootful Podman volumes
+      become: true
+      ansible.builtin.command:
+        argv:
+          - podman
+          - volume
+          - inspect
+          - "{{ item }}"
+          - --format
+          - "{{ '{{.Mountpoint}}' }}"
+      register: volume_inspect_results
+      loop: "{{ possible_volume_names }}"
+      loop_control:
+        label: "{{ item }}"
+      ignore_errors: true
+      failed_when: false
+      changed_when: false
+
+    - name: Pick first existing volume mountpoint
+      ansible.builtin.set_fact:
+        rootful_volume_status: >-
+          {{ volume_inspect_results.results
+             | selectattr('stdout', 'defined')
+             | selectattr('stdout', 'ne', '')
+             | first }}
+
+    - name: Assert rootful volume exists
+      ansible.builtin.assert:
+        that:
+          - rootful_volume_status is defined
+          - rootful_volume_status.stdout | length > 0
+        fail_msg: "Podman volume '{{ volume.name }}' or 'systemd-{{ volume.name }}' does not exist or has no mountpoint."
+
+    - name: Deploy files into volume {{ volume.name }}
+      become: true
+      block:
+
+        # --------------------
+        # Ensure parent directories exist
+        # --------------------
+        - name: Ensure parent directories exist for all files/templates
+          ansible.builtin.file:
+            path: "{{ rootful_volume_status.stdout }}/{{ item.src | regex_replace('^/+', '') | dirname }}"
+            state: directory
+            mode: "0755"
+          loop: "{{ volume.files | default([]) }}"
+          when: item.src is string and (not item.src.endswith('/') )
+
+        # --------------------
+        # Directories
+        # --------------------
+        - name: Create directories in volume {{ volume.name }}
+          ansible.builtin.file:
+            path: "{{ rootful_volume_status.stdout }}/{{ item.src | regex_replace('^/+', '') | regex_replace('/$', '') }}"
+            state: directory
+            mode: "{{ item.mode | default('0755') }}"
+          loop: "{{ volume.files | default([]) }}"
+          when: item.src is string and (item.src.endswith('/') or item.state | default('') == 'directory')
+
+        # --------------------
+        # Templates (auto-detect .j2)
+        # --------------------
+        - name: Render templates into volume {{ volume.name }}
+          ansible.builtin.template:
+            src: "{{ podman_quadlet_files_templates_src_path }}/templates/volumes/{{ volume.name }}/{{ item.src | regex_replace('^/+', '') }}"
+            dest: "{{ rootful_volume_status.stdout }}/{{ item.src | regex_replace('^/+', '') | regex_replace('\\.j2$', '') }}"
+            mode: "{{ item.mode | default('0644') }}"
+          loop: "{{ volume.files | default([]) }}"
+          when: item.src is string and item.src.endswith('.j2')
+
+        # --------------------
+        # Plain files (non-templates)
+        # --------------------
+        - name: Copy plain files into volume {{ volume.name }}
+          ansible.builtin.copy:
+            src: "{{ podman_quadlet_files_templates_src_path }}/files/volumes/{{ volume.name }}/{{ item.src | regex_replace('^/+', '') }}"
+            dest: "{{ rootful_volume_status.stdout }}/{{ item.src | regex_replace('^/+', '') }}"
+            mode: "{{ item.mode | default('0644') }}"
+            remote_src: false
+          loop: "{{ volume.files | default([]) }}"
+          when: item.src is string and not item.src.endswith('.j2') and not (item.src.endswith('/') or item.state | default('') == 'directory')

@@ -1,0 +1,19 @@
+- name: Reload rootless systemd
+  become: true
+  ansible.builtin.command:
+    argv:
+      - su
+      - "{{ podman_quadlet_rootless_user_name }}"
+      - "-c"
+      - "XDG_RUNTIME_DIR=/run/user/{{ podman_quadlet_rootless_user_uid }} DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/{{ podman_quadlet_rootless_user_uid }}/bus systemctl --user daemon-reload"
+  changed_when: false  # noqa: no-changed-when
+
+- name: Restart rootless container application
+  become: true
+  ansible.builtin.command:
+    argv:
+      - su
+      - "{{ podman_quadlet_rootless_user_name }}"
+      - "-c"
+      - "XDG_RUNTIME_DIR=/run/user/{{ podman_quadlet_rootless_user_uid }} DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/{{ podman_quadlet_rootless_user_uid }}/bus systemctl --user restart {{ podman_quadlet_app_name }}"
+  changed_when: false  # noqa: no-changed-when

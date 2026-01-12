@@ -1,0 +1,7 @@
+- name: Reload systemd and restart rootful container application
+  become: true
+  ansible.builtin.systemd:
+    daemon_reload: true
+    name: "{{ podman_quadlet_app_name }}"
+    state: restarted
+  changed_when: false  # noqa: no-changed-when

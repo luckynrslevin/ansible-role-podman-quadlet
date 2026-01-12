@@ -1,10 +1,41 @@
 ---
 
-- name: Create and start rootless container
-  ansible.builtin.import_tasks: rootless-container.yml
+- name: Copy/Render quadlet unit files/templates
+  ansible.builtin.import_tasks: rootless-quadlets.yml
 
-- name: Deploy files to volumes
-  ansible.builtin.include_tasks: rootless-volumes.yml
-  loop: "{{ podman_quadlet_volumes }}"
+# This is workaround, since I was not able to find a good solution to create the volumes,
+# defined as quadlet .volume files, without starting the container.
+# However, many containers provide configuration that can be applied within the quadlet file itself,
+# but also require specific configuration files deployed in the volumes.
+#
+# What I tried and why I decided to go this way.
+#
+# 1) Creating the volumes independent from quadlet with a system command
+#    like e.g.: podman volume create ...
+#    This would have worked, but brakes the whole "use quadlets" approach for volumes.
+#    And therefore would make things more confusing for users of the role.
+# 2) Creating volumes with systemctl command, without starting the container
+#    I tried: systemctl --user start $name-volume.service
+#    However, this did not work ...
+# 3) Using bind mounts in the .container files
+#    Again, this would have broken the whole "use quadlet" approach.
+#
+# => Therefore I have chosen the workaround to
+#    a) Initially start and stop the container once.
+#    b) Deploy necessary files to the volume
+#    c) Restart the container
+#
+- name: Initial start of the rootless container to create the volumes
+  ansible.builtin.import_tasks: rootless-systemd-restart.yml
+
+- name: Stop the rootless container, to be able to deploy files to the volumes
+  ansible.builtin.import_tasks: rootless-systemd-stop.yml
+
+- name: Deploy files into all Podman quadlet volumes
+  ansible.builtin.include_tasks: rootless-deploy-volume-files.yml
+  loop: "{{ podman_quadlet_volumes_files_to_stage | default([]) }}"
   loop_control:
     loop_var: volume
+
+- name: Restart of the rootless container
+  ansible.builtin.import_tasks: rootless-systemd-restart.yml

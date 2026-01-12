@@ -1,0 +1,10 @@
+---
+
+- name: Assert podman_quadlet_app_name is a non-empty string
+  ansible.builtin.assert:
+    that:
+      - podman_quadlet_app_name is string
+      - podman_quadlet_app_name | length > 0
+    fail_msg: >
+      The variable 'podman_quadlet_app_name' must be a non-empty string.
+      Current value: '{{ podman_quadlet_app_name }}'

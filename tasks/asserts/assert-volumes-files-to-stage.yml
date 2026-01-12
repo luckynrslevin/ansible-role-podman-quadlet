@@ -1,0 +1,81 @@
+---
+
+- name: Assert podman_quadlet_volumes_files_to_stage is a list
+  ansible.builtin.assert:
+    that:
+      - podman_quadlet_volumes_files_to_stage is iterable
+      - podman_quadlet_volumes_files_to_stage is not string
+    fail_msg: "podman_quadlet_volumes_files_to_stage must be a list."
+
+- name: Assert each volume has required structure
+  ansible.builtin.assert:
+    that:
+      - item is mapping
+      - item.name is defined
+      - item.name is string
+      - item.name | length > 0
+      - item.files is not defined or (item.files is iterable and item.files is not string)
+    fail_msg: >-
+      Each volume must be a dict with:
+      - name (non-empty string)
+      - files (optional list)
+  loop: "{{ podman_quadlet_volumes_files_to_stage }}"
+  loop_control:
+    label: "{{ item.name | default('UNKNOWN') }}"
+
+- name: Assert volume file entries are valid
+  ansible.builtin.assert:
+    that:
+      - item.1 is mapping
+      - item.1.src is defined
+      - item.1.src is string
+      - item.1.src | length > 0
+      - item.1.state is not defined or item.1.state == 'directory'
+    fail_msg: >-
+      Invalid file entry in volume '{{ item.0.name }}':
+      Each entry must have:
+      - src (non-empty string)
+      - optional state: directory
+  loop: "{{ podman_quadlet_volumes_files_to_stage | subelements('files', skip_missing=True) }}"
+  loop_control:
+    label: "{{ item.0.name }} -> {{ item.1.src | default('UNKNOWN') }}"
+
+- name: Assert directory entries are not templates
+  ansible.builtin.assert:
+    that:
+      - not (item.1.state | default('') == 'directory' and item.1.src.endswith('.j2'))
+    fail_msg: >-
+      Directory entry '{{ item.1.src }}' in volume '{{ item.0.name }}'
+      must not end with .j2
+  loop: "{{ podman_quadlet_volumes_files_to_stage | subelements('files', skip_missing=True) }}"
+
+- name: Check volume source files/directories exist on control host
+  ansible.builtin.stat:
+    path: >-
+      {{
+        podman_quadlet_files_templates_src_path
+        ~ '/'
+        ~ ('templates' if item.1.src.endswith('.j2') else 'files')
+        ~ '/volumes/'
+        ~ item.0.name
+        ~ '/'
+        ~ item.1.src
+      }}
+  register: quadlet_volume_src_stat
+  delegate_to: localhost
+  loop: "{{ podman_quadlet_volumes_files_to_stage | subelements('files', skip_missing=True) }}"
+  loop_control:
+    label: "{{ item.0.name }} -> {{ item.1.src }}"
+  check_mode: true
+
+- name: Assert source type matches declared state
+  ansible.builtin.assert:
+    that:
+      - >
+        (item.item.1.state | default('file')) != 'directory'
+        or item.stat.isdir
+    fail_msg: >-
+      Volume '{{ item.item.0.name }}':
+      '{{ item.item.1.src }}' is declared as directory
+      but is not a directory on the control host.
+  loop: "{{ quadlet_volume_src_stat.results }}"
