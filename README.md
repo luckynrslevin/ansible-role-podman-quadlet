@@ -45,19 +45,18 @@ Available variables are listed below, see `defaults/main.yml` and examples below
       podman_quadlet_rootless_user_name: nginx
       podman_quadlet_files_templates_src_path: "{{ playbook_dir }}"
       podman_quadlet_file_names:
-        - nginxrootless.container.j2
+        - nginxrootless.container
         - nginxrootless.volume
       podman_quadlet_volumes_files_to_stage:
         - name: nginxrootless
           files:
             - src: index.html
-            - src: template.html.j2
       podman_quadlet_firewall_ports:
         - 8080/tcp
 
 ```
 
-As a minimum configuration, you need to have the quadlet unit file ``{{ playbook_dir }}/files/nginxrootless.container`` with the following content:
+As a minimum configuration, you need to have the quadlet unit file ``{{ playbook_dir }}/files/quadlets/nginxrootless.container`` with the following content:
 ```
 [Unit]
 Description=Nginx container
@@ -73,6 +72,34 @@ PublishPort=8080:80/tcp
 WantedBy=multi-user.target
 
 ```
+
+And a quadlet volume file ``{{ playbook_dir }}/files/quadlets/nginxrootless.volume``
+```
+[Volume]
+
+```
+
+And the html file ``{{ playbook_dir }}/files/volumes/nginxrootless/index.html``
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx rootless container test page!</h1>
+<p>If you see this page, the nginx web server is successfully installed as rootless container and
+working.</p>
+</body>
+</html>
+
+```
+
 
 ### Rootful container example
 
@@ -92,13 +119,12 @@ WantedBy=multi-user.target
         - name: nginxrootful
           files:
             - src: index.html
-            - src: /template/template.html.j2
       podman_quadlet_firewall_ports:
         - 80/tcp
 
 ```
 
-As a minimum configuration, you need to have the quadlet unit file ``{{ playbook_dir }}/files/nginxrootful.container`` with the following content:
+As a minimum configuration, you need to have the quadlet unit file ``{{ playbook_dir }}/files/quadlets/nginxrootful.container`` with the following content:
 ```
 [Unit]
 Description=Nginx container
@@ -112,6 +138,33 @@ PublishPort=80:80/tcp
 
 [Install]
 WantedBy=multi-user.target
+
+```
+
+And a quadlet volume file ``{{ playbook_dir }}/files/quadlets/nginxrootful.volume``
+```
+[Volume]
+
+```
+
+And the html file ``{{ playbook_dir }}/files/volumes/nginxrootful/index.html``
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx rootful container test page!</h1>
+<p>If you see this page, the nginx web server is successfully installed as rootful container and
+working.</p>
+</body>
+</html>
 
 ```
 
