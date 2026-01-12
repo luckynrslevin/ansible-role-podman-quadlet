@@ -26,15 +26,11 @@ Available variables are listed below, see `defaults/main.yml` and examples below
 | --------- | ----------- |
 | **podman_quadlet_app_name** <br> string / required | The application name. |
 | **podman_quadlet_files_templates_src_path** <br> path / required | The root path of your `templates` and `files` folders. Typically this will be either your `{{ playbook_dir }}` or your `{{ role_path }}`. |
-| **podman_quadlet_file_names** <br> list of strings / required | The list of quadlet files / templates, currently supporting $name.container, $name.container.j2, $name.pod, $name.pod.j2, $name.volume and $name.volume.j2 files. |
-| **podman_quadlet_volumes_files_to_stage** <br> list of volumes and files per volume | Top level structure:<br> `- name` of the podman volume and a related list of <br> &nbsp; &nbsp; &nbsp;`files` or directories to be deployed on the volume, with the following subparameters: `src` |
-
-| **podman_quadlet_container_file_name** | The file name of the quadlet unit file with a file extension of ``.container`` or ``.container.j2`` . | mandatory | no default |
-| **podman_quadlet_files_templates_src_path** | The path where ansible should look for your configuration files / templates, e.g. also the quadlet unit file. Typically either your playbook directory, or in case you include this role to your own application role, the role path of your application role. | mandatory | no default |
-| **podman_quadlet_rootless_user_name** |  The linux user, which will be used to run the container in rootless mode. You need to make sure the user exists before executing this role. It will not be automatically created. You also need to make sure linger is enabled for this user to be able to start the container during boot automatically ```loginctl enable-linger <username>``` | optional | no default |
-| **podman_quadlet_volumes_files_to_stage** | The list of volumes related to the container. | optional | no default |
-| **podman_quadlet_firewall_ports** | The list of firewall ports that need to be enabeled. Format need to follow ``<portnumber>/<protocol>``, like e.g. ``8080/tcp`` or ``51820/udp``.| optional | no default |
-|  |  |  |  |
+| **podman_quadlet_file_names** <br> list of strings / required | The list of quadlet files / templates, currently supporting $name`.container`, $name`.container.j2`, $name`.pod`, $name`.pod.j2`, $name`.volume` and $name`.volume.j2` files. |
+| **podman_quadlet_volumes_files_to_stage** <br> list of volumes and files per volume | Top level structure:<br> `- name:` of the podman volume and a related list of <br> &nbsp; &nbsp; &nbsp;`files:` or directories to be deployed on the volume, with the following subparameters: <br> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; `- src:` file path and name <br> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; `mode:` Mode of file or dir. Default for files 0644, for directories 0755. <br> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; `dest:` destination of the file <br> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; `state:` 'file' or 'directory' Default is `file` <br> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; `owner:` UID Default is the UID of the current ansible user <br> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; `group:` GID; Default is the main group of the current ansible user |
+| **podman_quadlet_rootless_user_name** <br>string | Linux system user name used to execute a rootless container |
+ **podman_quadlet_firewall_ports** <br> list of strings | List of firewall ports to be managed |
+| | |
 
 ### Rootless container example
 
@@ -44,18 +40,18 @@ Available variables are listed below, see `defaults/main.yml` and examples below
   hosts: all
 
   roles:
-    - role: podman-quadlet
-      podman_quadlet_container_file_name: nginxrootless.container
+    - role: podman_quadlet
+      podman_quadlet_app_name: nginxrootless
+      podman_quadlet_rootless_user_name: nginx
       podman_quadlet_files_templates_src_path: "{{ playbook_dir }}"
-      podman_quadlet_rootless_user_name: nginx 
+      podman_quadlet_file_names:
+        - nginxrootless.container.j2
+        - nginxrootless.volume
       podman_quadlet_volumes_files_to_stage:
-        - name: nginxrootless-volume
-          paths:
-            - path: /index.html
-              state: file
-              owner: 1001 # optional: Default is uid of the rootless user
-              group: 1001 # optional: Default is gid of the rootless user
-              mode: "0644" # optional: Default is "0644"
+        - name: nginxrootless
+          files:
+            - src: index.html
+            - src: template.html.j2
       podman_quadlet_firewall_ports:
         - 8080/tcp
 
@@ -86,17 +82,17 @@ WantedBy=multi-user.target
   hosts: all
 
   roles:
-    - role: podman-quadlet
-      podman_quadlet_container_file_name: nginxrootful.container
+    - role: podman_quadlet
+      podman_quadlet_app_name: nginxrootful
       podman_quadlet_files_templates_src_path: "{{ playbook_dir }}"
+      podman_quadlet_file_names:
+        - nginxrootful.container
+        - nginxrootful.volume
       podman_quadlet_volumes_files_to_stage:
-        - name: nginxrootful-volume
-          paths:
-            - path: /index.html
-              state: file
-              owner: 0 # optional: Default is 0
-              group: 0 # optional: Default is 0
-              mode: "0644" # optional: Default is "0644"
+        - name: nginxrootful
+          files:
+            - src: index.html
+            - src: /template/template.html.j2
       podman_quadlet_firewall_ports:
         - 80/tcp
 
