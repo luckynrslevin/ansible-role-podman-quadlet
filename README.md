@@ -27,10 +27,9 @@ Available variables are listed below, see `defaults/main.yml` and examples below
 | **podman_quadlet_app_name** <br> string / required | The application name. |
 | **podman_quadlet_files_templates_src_path** <br> path / required | The root path of your `templates` and `files` folders. Typically this will be either your `{{ playbook_dir }}` or your `{{ role_path }}`. |
 | **podman_quadlet_file_names** <br> list of strings / required | The list of quadlet files / templates, currently supporting $name`.container`, $name`.container.j2`, $name`.pod`, $name`.pod.j2`, $name`.volume` and $name`.volume.j2` files. |
-| **podman_quadlet_volumes_files_to_stage** <br> list of volumes and files per volume | Top level structure:<br> `- name:` of the podman volume and a related list of <br> &nbsp; &nbsp; &nbsp;`files:` or directories to be deployed on the volume, with the following subparameters: <br> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; `- src:` file path and name <br> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; `mode:` Mode of file or dir. Default for files 0644, for directories 0755. <br> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; `dest:` destination of the file <br> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; `state:` 'file' or 'directory' Default is `file` <br> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; `owner:` UID Default is the UID of the current ansible user <br> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; `group:` GID; Default is the main group of the current ansible user |
-| **podman_quadlet_rootless_user_name** <br>string | Linux system user name used to execute a rootless container |
- **podman_quadlet_firewall_ports** <br> list of strings | List of firewall ports to be managed |
-| | |
+| **podman_quadlet_volumes_files_to_stage** <br> list of volumes and files per volume | Top level structure:<br /> `- name:` of the podman volume and a related list of<br />.    `files:` or directories to be deployed on the volume, with the following subparameters:<br />     `- src:` file path and name <br> &nbsp;       `mode:` Mode of file or dir. Default for files 0644, for directories 0755. <br>        `dest:` destination of the file <br>        `state:` 'file' or 'directory' Default is `file` <br>        `owner:` UID Default is the UID of the current ansible user <br>        `group:` GID; Default is the main group of the current ansible user |
+| **podman_quadlet_rootless_user_name** <br>string | Linux system user name used to execute a rootless container. |
+| **podman_quadlet_firewall_ports** <br> list of strings | List of firewall ports to be managed. |
 
 ### Rootless container example
 
@@ -56,7 +55,7 @@ Available variables are listed below, see `defaults/main.yml` and examples below
 
 ```
 
-As a minimum configuration, you need to have the quadlet unit file ``{{ playbook_dir }}/files/quadlets/nginxrootless.container`` with the following content:
+As a minimum configuration, you need to have the quadlet unit file `{{ playbook_dir }}/files/quadlets/nginxrootless.container` with the following content:
 ```
 [Unit]
 Description=Nginx container
@@ -70,16 +69,14 @@ PublishPort=8080:80/tcp
 
 [Install]
 WantedBy=multi-user.target
-
 ```
 
-And a quadlet volume file ``{{ playbook_dir }}/files/quadlets/nginxrootless.volume``
+And a quadlet volume file `{{ playbook_dir }}/files/quadlets/nginxrootless.volume`
 ```
 [Volume]
-
 ```
 
-And the html file ``{{ playbook_dir }}/files/volumes/nginxrootless/index.html``
+And the html file `{{ playbook_dir }}/files/volumes/nginxrootless/index.html`
 ```html
 <!DOCTYPE html>
 <html>
@@ -97,7 +94,6 @@ font-family: Tahoma, Verdana, Arial, sans-serif; }
 working.</p>
 </body>
 </html>
-
 ```
 
 
@@ -121,10 +117,9 @@ working.</p>
             - src: index.html
       podman_quadlet_firewall_ports:
         - 80/tcp
-
 ```
 
-As a minimum configuration, you need to have the quadlet unit file ``{{ playbook_dir }}/files/quadlets/nginxrootful.container`` with the following content:
+As a minimum configuration, you need to have the quadlet unit file `{{ playbook_dir }}/files/quadlets/nginxrootful.container` with the following content:
 ```
 [Unit]
 Description=Nginx container
@@ -138,16 +133,14 @@ PublishPort=80:80/tcp
 
 [Install]
 WantedBy=multi-user.target
-
 ```
 
-And a quadlet volume file ``{{ playbook_dir }}/files/quadlets/nginxrootful.volume``
+And a quadlet volume file `{{ playbook_dir }}/files/quadlets/nginxrootful.volume`
 ```
 [Volume]
-
 ```
 
-And the html file ``{{ playbook_dir }}/files/volumes/nginxrootful/index.html``
+And the html file `{{ playbook_dir }}/files/volumes/nginxrootful/index.html`
 ```html
 <!DOCTYPE html>
 <html>
@@ -165,7 +158,6 @@ font-family: Tahoma, Verdana, Arial, sans-serif; }
 working.</p>
 </body>
 </html>
-
 ```
 
 ### Istallation
