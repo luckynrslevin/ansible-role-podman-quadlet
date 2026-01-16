@@ -1,0 +1,24 @@
+{
+    "python-envs.pythonProjects": [],
+    "ansible.python.interpreterPath": "/home/ds/.venvs/molecule/bin/python",
+    "workbench.colorCustomizations": {
+        // "editor.background": "#2a2a2a",
+        //"sideBar.background": "#1d0079",
+        "activityBar.background": "#1d0079",
+        "statusBar.background": "#1d0079",
+        //"statusBar.noFolderBackground": "#1d0079",
+        // "statusBar.debugBackground": "#2a2a2a",
+        "titleBar.activeBackground": "#1d0079",
+        "titleBar.inactiveBackground": "#1d0079",
+        // "panel.background": "#2a2a2a",
+        // "editorGroupHeader.tabsBackground": "#2a2a2a",
+        // "tab.activeBackground": "#2a2a2a",
+        // "tab.inactiveBackground": "#2a2a2a",
+        // "breadcrumb.background": "#2a2a2a",
+        // "terminal.background": "#2a2a2a",
+        // "notifications.background": "#2a2a2a",
+        // "dropdown.background": "#2a2a2a",
+        // "menu.background": "#2a2a2a",
+        // "commandCenter.background": "#2a2a2a"
+    }
+}
