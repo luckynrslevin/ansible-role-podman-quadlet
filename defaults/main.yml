@@ -64,7 +64,6 @@ podman_quadlet_volumes_files_to_stage: []
 #   - name: application-web-log
 #     files:
 #       - src: app-db-conf.cfg
-#         mode: "0600" (Default: 0644)
 #         dest: /foo/bar/app-db-conf.cfg (Defailt: same as src)
 #         state: file (Default: file for files and templates. Other possible value: directory )
 #         owner: 0 (Deafult: UID of the current user)
