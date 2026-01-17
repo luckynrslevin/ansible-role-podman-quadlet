@@ -1,6 +1,6 @@
 ---
 
-- name: "Assert inputs for podman_quadlet"
+- name: Assert inputs for podman_quadlet
   ansible.builtin.include_tasks: asserts/asserts-main.yml
 
 - name: Conditionally include task to configure firewall, before start of containers
