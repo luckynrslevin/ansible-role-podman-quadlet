@@ -8,10 +8,10 @@
   ansible.builtin.assert:
     that:
       - item | length > 0
-      - item is match('^.+\.(container|pod|volume)(\.j2)?$')
+      - item is match('^.+\.(container|pod|volume|network)(\.j2)?$')
     fail_msg: >-
       Invalid quadlet file name '{{ item }}'.
-      Must end with .container, .pod, or .volume (optionally .j2).
+      Must end with .container, .pod, .volume or .network (optionally .j2).
   loop: "{{ podman_quadlet_file_names }}"
 
 - name: Assert at least one .container file is present
