@@ -41,9 +41,6 @@
         label: "{{ item.name }}"
       when: not item.is_template
 
-# TODO: Limit validation to the current service:
-#       see "Debugging a limited set of unit files¶"
-#       in https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html
 - name: Validate quadlet unit files
   become: true
   ansible.builtin.shell:
@@ -51,6 +48,7 @@
       su - {{ podman_quadlet_rootless_user_name }} -c '
       export XDG_RUNTIME_DIR=/run/user/$(id -u)
       export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus
+      QUADLET_UNIT_DIRS={{ podman_quadlet_systemd_dir }}/{{ podman_quadlet_app_name }} \
       /usr/lib/systemd/system-generators/podman-system-generator --user --dryrun
       '
     executable: /bin/bash

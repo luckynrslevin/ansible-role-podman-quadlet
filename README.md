@@ -231,18 +231,3 @@ pip install molecule ansible ansible-lint
 ```bash
 molecule reset && rm -rf ~/.cache/molecule && molecule test
 ```
-
-
-
-## TODO:
-
-- add table see https://github.com/buluma/ansible-role-bootstrap/blob/main/README.md
-- change readme structure, see https://github.com/geerlingguy/ansible-role-nginx
-- add github actions for molecule tests
-- test from macos host to remote server
-- Create initial release
-- Create public playbooks for actual applications
-  - wireguard
-  - syncthing
-  - shairport-sync
-  - lyrion music server
