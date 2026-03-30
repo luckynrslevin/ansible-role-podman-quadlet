@@ -35,6 +35,9 @@
         label: "{{ item.name }}"
       when: not item.is_template
 
+# TODO: Limit validation to the current service:
+#       see "Debugging a limited set of unit files¶"
+#       in https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html
 - name: Validate quadlet unit files
   become: true
   ansible.builtin.shell:

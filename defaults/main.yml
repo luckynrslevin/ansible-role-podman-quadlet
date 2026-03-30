@@ -64,11 +64,22 @@ podman_quadlet_volumes_files_to_stage: []
 #   - name: application-web-log
 #     files:
 #       - src: app-db-conf.cfg
-#         dest: /foo/bar/app-db-conf.cfg (Defailt: same as src)
+#         dest: /foo/bar/app-db-conf.cfg (Default: same as src)
 #         state: file (Default: file for files and templates. Other possible value: directory )
-#         owner: 0 (Deafult: UID of the current user)
-#         group: 0 (Deafult: Main GID of the current user)
+#         owner: 0 (Default: 0. See note on rootless UID/GID below)
+#         group: 0 (Default: 0. See note on rootless UID/GID below)
 #         mode: "0600" (Default for files: 0644; Default for directories: "0755")
+#
+# Rootless UID/GID:
+#   For rootless containers, owner/group are CONTAINER-PERSPECTIVE UIDs/GIDs.
+#   E.g., owner: 33 means UID 33 inside the container (www-data), not UID 33
+#   on the host. The role uses 'podman unshare chown' to map these correctly
+#   through Podman's user namespace.
+#   Default 0 = root inside the container = the rootless host user.
+#
+# Rootful UID/GID:
+#   For rootful containers, owner/group are HOST UIDs/GIDs (no namespace
+#   remapping). Default 0 = root on the host.
 #
 #       - src: peers/
 #         state: directory

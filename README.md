@@ -27,9 +27,45 @@ Available variables are listed below, see `defaults/main.yml` and examples below
 | **podman_quadlet_app_name** <br> string / required | The application name. |
 | **podman_quadlet_files_templates_src_path** <br> path / required | The root path of your `templates` and `files` folders. Typically this will be either your `{{ playbook_dir }}` or your `{{ role_path }}`. |
 | **podman_quadlet_file_names** <br> list of strings / required | The list of quadlet files / templates, currently supporting $name`.container`, $name`.container.j2`, $name`.pod`, $name`.pod.j2`, $name`.volume` and $name`.volume.j2` files. |
-| **podman_quadlet_volumes_files_to_stage** <br> list of volumes and files per volume | Top level structure:<br /> `- name:` of the podman volume and a related list of<br />     `files:` or directories to be deployed on the volume, with the following subparameters:<br />     `- src:` file path and name <br> &nbsp;       `mode:` Mode of file or dir. Default for files 0644, for directories 0755. <br>        `dest:` destination of the file <br>        `state:` 'file' or 'directory' Default is `file` <br>        `owner:` UID Default is the UID of the current ansible user <br>        `group:` GID; Default is the main group of the current ansible user |
+| **podman_quadlet_volumes_files_to_stage** <br> list of volumes and files per volume | Top level structure:<br /> `- name:` of the podman volume and a related list of<br />     `files:` or directories to be deployed on the volume, with the following subparameters:<br />     `- src:` file path and name <br> &nbsp;       `mode:` Mode of file or dir. Default for files 0644, for directories 0755. <br>        `dest:` destination of the file <br>        `state:` 'file' or 'directory' Default is `file` <br>        `owner:` UID inside the container (default: 0). See [Rootless UID/GID mapping](#rootless-uidgid-mapping). <br>        `group:` GID inside the container (default: 0). See [Rootless UID/GID mapping](#rootless-uidgid-mapping). |
 | **podman_quadlet_rootless_user_name** <br>string | Linux system user name used to execute a rootless container. Role expects the Linux user to already exist on the system. Add necessary task to create and enable linger in your playbook before calling the role. |
 | **podman_quadlet_firewall_ports** <br> list of strings | List of firewall ports to be managed. |
+### Rootless UID/GID mapping
+
+Rootless Podman containers use Linux user namespaces. The host user (e.g., UID 1005) maps to **UID 0 (root) inside the container**. Non-root container UIDs are mapped to high-numbered host UIDs via the subuid/subgid ranges in `/etc/subuid` and `/etc/subgid`.
+
+| Inside container | Host (rootless user UID 1005, subuid start 100000) |
+| --- | --- |
+| UID 0 (root) | UID 1005 (the rootless host user) |
+| UID 33 (www-data) | UID 100032 |
+| UID 999 | UID 100998 |
+
+When deploying files into rootless volumes, `owner` and `group` are **container-perspective UIDs/GIDs**. The role uses `podman unshare chown` to map them correctly through Podman's user namespace. You never need to calculate host subuid offsets yourself.
+
+For **rootful** containers, `owner` and `group` are standard host UIDs/GIDs (no namespace remapping applies).
+
+**Example:** deploying a config file owned by `www-data` (UID 33) inside a rootless container:
+
+```yaml
+podman_quadlet_volumes_files_to_stage:
+  - name: myapp-config
+    files:
+      - src: app.conf
+        owner: 33
+        group: 33
+        mode: "0644"
+```
+
+### Technical limitation: rootless volume ownership and subuid/subgid ranges
+
+The UID/GID mapping for rootless containers is determined by the user's entry in `/etc/subuid` and `/etc/subgid`. These ranges are allocated sequentially when users are created (e.g., first user gets `524288:65536`, second gets `589824:65536`, etc.). The files stored in rootless volumes use **host-mapped UIDs** on disk.
+
+This means:
+- **As long as the Linux system user exists**, the subuid/subgid mapping remains stable and volume data keeps the correct ownership. You can freely stop, remove, and redeploy containers without issues.
+- **If you delete the system user** (which removes the subuid/subgid entry) **but keep the volume data**, and then recreate the user, the new user will likely receive a different subuid range. The existing volume files will then have host UIDs from the old range, resulting in permission mismatches.
+
+In practice this is rarely an issue: on a fresh server reinstall, volumes are either empty or should be restored using `podman unshare podman volume import`, which writes container-perspective UIDs that are correctly mapped through the new subuid range.
+
 ### Rootless container example
 
 ```yaml

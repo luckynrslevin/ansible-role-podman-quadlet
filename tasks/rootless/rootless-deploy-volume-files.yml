@@ -1,3 +1,18 @@
+# Rootless Podman UID/GID mapping:
+#
+# Rootless containers use Linux user namespaces. The host user (e.g., UID 1005)
+# maps to UID 0 (root) inside the container. Non-root container UIDs map to
+# high-numbered host UIDs from the subuid/subgid range (e.g., container UID 33
+# becomes host UID 100032).
+#
+# Ansible's copy/template modules can only set host-perspective UIDs. To set
+# container-perspective ownership, we:
+#   1. Copy/template files owned by the rootless host user (= container root)
+#   2. Use 'podman unshare chown' to set the desired container-perspective UIDs
+#
+# The owner/group values in podman_quadlet_volumes_files_to_stage are
+# container-perspective UIDs (default: 0 = root inside container).
+
 - name: Deploy files into rootless Podman volumes
   become: true
   vars:
@@ -39,13 +54,15 @@
 
         # --------------------
         # Ensure parent directories exist
+        # Files are initially owned by the rootless host user (= container UID 0).
+        # Container-perspective ownership is applied afterwards via podman unshare.
         # --------------------
         - name: Ensure parent directories exist for all files/templates
           ansible.builtin.file:
             path: "{{ rootless_volume_status.stdout }}/{{ item.src | regex_replace('^/+', '') | dirname }}"
             state: directory
-            owner: "{{ item.owner | default(podman_quadlet_rootless_user_uid, true) }}"
-            group: "{{ item.group | default(podman_quadlet_rootless_user_gid, true) }}"
+            owner: "{{ podman_quadlet_rootless_user_uid }}"
+            group: "{{ podman_quadlet_rootless_user_gid }}"
             mode: "0755"
           loop: "{{ volume.files | default([]) }}"
           when: item.src is string and (not item.src.endswith('/') )
@@ -57,8 +74,8 @@
           ansible.builtin.file:
             path: "{{ rootless_volume_status.stdout }}/{{ item.src | regex_replace('^/+', '') | regex_replace('/$', '') }}"
             state: directory
-            owner: "{{ item.owner | default(podman_quadlet_rootless_user_uid, true) }}"
-            group: "{{ item.group | default(podman_quadlet_rootless_user_gid, true) }}"
+            owner: "{{ podman_quadlet_rootless_user_uid }}"
+            group: "{{ podman_quadlet_rootless_user_gid }}"
             mode: "{{ item.mode | default('0755') }}"
           loop: "{{ volume.files | default([]) }}"
           when: item.src is string and (item.src.endswith('/') or item.state | default('') == 'directory')
@@ -70,8 +87,8 @@
           ansible.builtin.template:
             src: "{{ podman_quadlet_files_templates_src_path }}/templates/volumes/{{ volume.name }}/{{ item.src | regex_replace('^/+', '') }}"
             dest: "{{ rootless_volume_status.stdout }}/{{ item.src | regex_replace('^/+', '') | regex_replace('\\.j2$', '') }}"
-            owner: "{{ item.owner | default(podman_quadlet_rootless_user_uid, true) }}"
-            group: "{{ item.group | default(podman_quadlet_rootless_user_gid, true) }}"
+            owner: "{{ podman_quadlet_rootless_user_uid }}"
+            group: "{{ podman_quadlet_rootless_user_gid }}"
             mode: "{{ item.mode | default('0644') }}"
           loop: "{{ volume.files | default([]) }}"
           when: item.src is string and item.src.endswith('.j2')
@@ -83,9 +100,33 @@
           ansible.builtin.copy:
             src: "{{ podman_quadlet_files_templates_src_path }}/files/volumes/{{ volume.name }}/{{ item.src | regex_replace('^/+', '') }}"
             dest: "{{ rootless_volume_status.stdout }}/{{ item.src | regex_replace('^/+', '') }}"
-            owner: "{{ item.owner | default(podman_quadlet_rootless_user_uid, true) }}"
-            group: "{{ item.group | default(podman_quadlet_rootless_user_gid, true) }}"
+            owner: "{{ podman_quadlet_rootless_user_uid }}"
+            group: "{{ podman_quadlet_rootless_user_gid }}"
             mode: "{{ item.mode | default('0644') }}"
             remote_src: false
           loop: "{{ volume.files | default([]) }}"
           when: item.src is string and not item.src.endswith('.j2') and not (item.src.endswith('/') or item.state | default('') == 'directory')
+
+        # --------------------
+        # Fix ownership using podman unshare (container-perspective UIDs)
+        #
+        # podman unshare enters the same user namespace as rootless containers.
+        # Inside it, host UID of the rootless user = UID 0, and subuid-mapped
+        # UIDs become 1-65535. This lets us chown to container-perspective UIDs.
+        # --------------------
+        - name: Set container-perspective ownership in volume {{ volume.name }}
+          vars:
+            _dest_path: >-
+              {{ rootless_volume_status.stdout }}/{{ item.src
+                 | regex_replace('^/+', '')
+                 | regex_replace('/$', '')
+                 | regex_replace('\.j2$', '') }}
+          ansible.builtin.shell:
+            cmd: >-
+              su - {{ podman_quadlet_rootless_user_name }} -c
+              'podman unshare chown {{ item.owner | default(0) }}:{{ item.group | default(0) }} "{{ _dest_path }}"'
+            executable: /bin/bash
+          loop: "{{ volume.files | default([]) }}"
+          loop_control:
+            label: "{{ item.src }} -> {{ item.owner | default(0) }}:{{ item.group | default(0) }}"
+          changed_when: false
