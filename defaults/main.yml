@@ -101,12 +101,28 @@ podman_quadlet_rootless_user_name: ''
 podman_quadlet_firewall_ports: []
 ###############################################################################
 # optional: firewall ports to manage
-# e.g.: 8080/tcp or 9090/upd
+# e.g.: 8080/tcp or 9090/udp
 # podman_quadlet_firewall_ports:
 #   - 8080/tcp
-#   - 9090/upd
+#   - 9090/udp
 #   - 32768-60999/tcp
 #   - 32768-60999/udp
+###############################################################################
+
+###############################################################################
+podman_quadlet_firewall_port_forwards: []
+###############################################################################
+# optional: firewall port forwards to manage
+# Useful for rootless containers that cannot bind to privileged ports (< 1024).
+# Each entry forwards a host port to a container port.
+#
+# podman_quadlet_firewall_port_forwards:
+#   - port: 443
+#     proto: tcp
+#     toport: 8443
+#   - port: 53
+#     proto: udp
+#     toport: 1053
 ###############################################################################
 
 ###############################################################################

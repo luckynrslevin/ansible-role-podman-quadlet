@@ -21,3 +21,6 @@
 
 - name: "Assert public API variable: podman_quadlet_firewall_ports"
   ansible.builtin.import_tasks: asserts/assert-firewall-ports.yml
+
+- name: "Assert public API variable: podman_quadlet_firewall_port_forwards"
+  ansible.builtin.import_tasks: asserts/assert-firewall-port-forwards.yml

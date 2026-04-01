@@ -1,0 +1,27 @@
+---
+
+- name: Assert that podman_quadlet_firewall_port_forwards is defined and iterable
+  ansible.builtin.assert:
+    that:
+      - podman_quadlet_firewall_port_forwards is defined
+      - podman_quadlet_firewall_port_forwards is iterable
+    fail_msg: >-
+      podman_quadlet_firewall_port_forwards must be defined and be a list.
+
+- name: Assert port forward entries have required fields
+  ansible.builtin.assert:
+    that:
+      - item.port is defined
+      - item.port | int >= 1
+      - item.port | int <= 65535
+      - item.proto is defined
+      - item.proto in ['tcp', 'udp']
+      - item.toport is defined
+      - item.toport | int >= 1
+      - item.toport | int <= 65535
+    fail_msg: >-
+      Invalid port forward entry: {{ item }}.
+      Each entry must have port (1-65535), proto (tcp|udp), and toport (1-65535).
+  loop: "{{ podman_quadlet_firewall_port_forwards }}"
+  loop_control:
+    label: "{{ item.port }}/{{ item.proto }} -> {{ item.toport }}"
