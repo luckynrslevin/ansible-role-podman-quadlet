@@ -1,12 +1,21 @@
 ---
 
-- name: "Patch {{ patch_item.format }} file: {{ patch_item.file }}"
+# Patch each value individually using --key/--value arguments.
+# This avoids Ansible Vault serialization issues with to_json/dict2items filters
+# which fail on dicts containing vault-decrypted values.
+- name: "Patch {{ patch_item.format }} value: {{ _key }} in {{ patch_item.file }}"
   ansible.builtin.script:
     cmd: >-
       patch_structured_config.py
       --file "{{ _volume_mountpoint }}/{{ patch_item.file | regex_replace('^/+', '') }}"
       --format "{{ patch_item.format }}"
-      --patches '{{ patch_item.values | to_json }}'
+      --key "{{ _key }}"
+      --value "{{ patch_item.set[_key] }}"
     executable: python3
   register: patch_structured_result
-  changed_when: (patch_structured_result.stdout | from_json).changed | default(false)
+  changed_when: (patch_structured_result.stdout_lines[0] | from_json).changed | default(false)
+  no_log: true
+  loop: "{{ patch_item.set.keys() | list }}"
+  loop_control:
+    loop_var: _key
+    label: "{{ _key }}"

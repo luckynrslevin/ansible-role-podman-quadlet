@@ -43,14 +43,13 @@
   loop_control:
     label: "{{ item.0.name }} -> {{ item.1.file | default('UNKNOWN') }}"
 
-- name: Assert non-XML patches have values dict
+- name: Assert non-XML patches have values
   ansible.builtin.assert:
     that:
-      - item.1.values is defined
-      - item.1.values is mapping
+      - item.1.set is defined
     fail_msg: >-
       Patch '{{ item.1.file }}' in volume '{{ item.0.name }}' uses format
-      '{{ item.1.format }}' and must have a 'values' dict.
+      '{{ item.1.format }}' and must have a 'set' field.
   loop: "{{ podman_quadlet_volumes_config_patches | subelements('patches') }}"
   loop_control:
     label: "{{ item.0.name }} -> {{ item.1.file | default('UNKNOWN') }}"

@@ -107,7 +107,7 @@ podman_quadlet_volumes_config_patches: []
 #         format: yaml                     # yaml | json | ini | xml | keyvalue
 #         owner: 0                         # container-perspective UID (default: 0)
 #         group: 0                         # container-perspective GID (default: 0)
-#         values:                          # for yaml/json/ini/keyvalue
+#         set:                             # for yaml/json/ini/keyvalue
 #           key: value
 #           nested.key: value              # dot-notation for yaml/json
 #         section: ""                      # for ini format only

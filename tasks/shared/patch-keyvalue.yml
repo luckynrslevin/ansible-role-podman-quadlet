@@ -6,7 +6,7 @@
     regexp: "^{{ kv_item.key | regex_escape }}\\s*{{ patch_item.delimiter | default('=') | regex_escape }}"
     line: "{{ kv_item.key }}{{ patch_item.delimiter | default('=') }}{{ kv_item.value }}"
     create: false
-  loop: "{{ patch_item.values | dict2items }}"
+  loop: "{{ patch_item.set | dict2items }}"
   loop_control:
     loop_var: kv_item
     label: "{{ kv_item.key }}={{ kv_item.value }}"
