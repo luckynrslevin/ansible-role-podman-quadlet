@@ -1,0 +1,13 @@
+---
+
+- name: "Patch INI entry: {{ ini_item.key }}"
+  community.general.ini_file:
+    path: "{{ _volume_mountpoint }}/{{ patch_item.file | regex_replace('^/+', '') }}"
+    section: "{{ patch_item.section | default(omit) }}"
+    option: "{{ ini_item.key }}"
+    value: "{{ ini_item.value }}"
+    no_extra_spaces: true
+  loop: "{{ patch_item.values | dict2items }}"
+  loop_control:
+    loop_var: ini_item
+    label: "{{ ini_item.key }}={{ ini_item.value }}"

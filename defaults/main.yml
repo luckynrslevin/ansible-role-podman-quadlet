@@ -92,6 +92,41 @@ podman_quadlet_volumes_files_to_stage: []
 ###############################################################################
 
 ###############################################################################
+podman_quadlet_volumes_config_patches: []
+###############################################################################
+# optional: patches to apply to existing config files inside Podman volumes
+# --------------------------------------------------------------------------- #
+# Instead of replacing entire files, this patches specific values in existing
+# configuration files that already live inside the volume (e.g. created by the
+# container on first start).
+# --------------------------------------------------------------------------- #
+# podman_quadlet_volumes_config_patches:
+#   - name: volume-name
+#     patches:
+#       - file: path/to/config.yml
+#         format: yaml                     # yaml | json | ini | xml | keyvalue
+#         owner: 0                         # container-perspective UID (default: 0)
+#         group: 0                         # container-perspective GID (default: 0)
+#         values:                          # for yaml/json/ini/keyvalue
+#           key: value
+#           nested.key: value              # dot-notation for yaml/json
+#         section: ""                      # for ini format only
+#         delimiter: "="                   # for keyvalue format only (default: "=")
+#         xpath_patches:                   # for xml format only
+#           - xpath: /config/server/port
+#             value: "8096"
+#
+# Rootless UID/GID:
+#   Same rules as podman_quadlet_volumes_files_to_stage: owner/group are
+#   container-perspective UIDs/GIDs. The role uses 'podman unshare chown'
+#   to map these correctly through Podman's user namespace.
+#
+# Rootful UID/GID:
+#   owner/group are HOST UIDs/GIDs (no namespace remapping).
+#
+###############################################################################
+
+###############################################################################
 podman_quadlet_rootless_user_name: ''
 ###############################################################################
 # optional: Linux user name for rootless container.

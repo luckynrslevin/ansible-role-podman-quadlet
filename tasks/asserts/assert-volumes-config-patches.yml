@@ -1,0 +1,71 @@
+---
+
+- name: Assert podman_quadlet_volumes_config_patches is a list
+  ansible.builtin.assert:
+    that:
+      - podman_quadlet_volumes_config_patches is iterable
+      - podman_quadlet_volumes_config_patches is not string
+    fail_msg: "podman_quadlet_volumes_config_patches must be a list."
+
+- name: Assert each config patch entry has required structure
+  ansible.builtin.assert:
+    that:
+      - item is mapping
+      - item.name is defined
+      - item.name is string
+      - item.name | length > 0
+      - item.patches is defined
+      - item.patches is iterable
+      - item.patches is not string
+    fail_msg: >-
+      Each config patch entry must be a dict with:
+      - name (non-empty string)
+      - patches (list)
+  loop: "{{ podman_quadlet_volumes_config_patches }}"
+  loop_control:
+    label: "{{ item.name | default('UNKNOWN') }}"
+
+- name: Assert each patch has valid file and format
+  ansible.builtin.assert:
+    that:
+      - item.1 is mapping
+      - item.1.file is defined
+      - item.1.file is string
+      - item.1.file | length > 0
+      - item.1.format is defined
+      - item.1.format in ['yaml', 'json', 'ini', 'xml', 'keyvalue']
+    fail_msg: >-
+      Invalid patch entry in volume '{{ item.0.name }}':
+      Each patch must have:
+      - file (non-empty string)
+      - format (one of: yaml, json, ini, xml, keyvalue)
+  loop: "{{ podman_quadlet_volumes_config_patches | subelements('patches') }}"
+  loop_control:
+    label: "{{ item.0.name }} -> {{ item.1.file | default('UNKNOWN') }}"
+
+- name: Assert non-XML patches have values dict
+  ansible.builtin.assert:
+    that:
+      - item.1.values is defined
+      - item.1.values is mapping
+    fail_msg: >-
+      Patch '{{ item.1.file }}' in volume '{{ item.0.name }}' uses format
+      '{{ item.1.format }}' and must have a 'values' dict.
+  loop: "{{ podman_quadlet_volumes_config_patches | subelements('patches') }}"
+  loop_control:
+    label: "{{ item.0.name }} -> {{ item.1.file | default('UNKNOWN') }}"
+  when: item.1.format != 'xml'
+
+- name: Assert XML patches have xpath_patches list
+  ansible.builtin.assert:
+    that:
+      - item.1.xpath_patches is defined
+      - item.1.xpath_patches is iterable
+      - item.1.xpath_patches is not string
+    fail_msg: >-
+      Patch '{{ item.1.file }}' in volume '{{ item.0.name }}' uses format
+      'xml' and must have an 'xpath_patches' list.
+  loop: "{{ podman_quadlet_volumes_config_patches | subelements('patches') }}"
+  loop_control:
+    label: "{{ item.0.name }} -> {{ item.1.file | default('UNKNOWN') }}"
+  when: item.1.format == 'xml'

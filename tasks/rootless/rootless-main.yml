@@ -37,5 +37,11 @@
   loop_control:
     loop_var: volume
 
+- name: Patch config files in all Podman quadlet volumes
+  ansible.builtin.include_tasks: rootless-patch-volume-configs.yml
+  loop: "{{ podman_quadlet_volumes_config_patches | default([]) }}"
+  loop_control:
+    loop_var: volume
+
 - name: Restart of the rootless container
   ansible.builtin.import_tasks: rootless-systemd-restart.yml

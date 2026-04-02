@@ -1,0 +1,11 @@
+---
+
+- name: "Patch XML entry: {{ xml_item.xpath }}"
+  community.general.xml:
+    path: "{{ _volume_mountpoint }}/{{ patch_item.file | regex_replace('^/+', '') }}"
+    xpath: "{{ xml_item.xpath }}"
+    value: "{{ xml_item.value }}"
+  loop: "{{ patch_item.xpath_patches }}"
+  loop_control:
+    loop_var: xml_item
+    label: "{{ xml_item.xpath }}"

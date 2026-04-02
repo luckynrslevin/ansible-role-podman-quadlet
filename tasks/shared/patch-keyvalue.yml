@@ -1,0 +1,12 @@
+---
+
+- name: "Patch key-value entry: {{ kv_item.key }}"
+  ansible.builtin.lineinfile:
+    path: "{{ _volume_mountpoint }}/{{ patch_item.file | regex_replace('^/+', '') }}"
+    regexp: "^{{ kv_item.key | regex_escape }}\\s*{{ patch_item.delimiter | default('=') | regex_escape }}"
+    line: "{{ kv_item.key }}{{ patch_item.delimiter | default('=') }}{{ kv_item.value }}"
+    create: false
+  loop: "{{ patch_item.values | dict2items }}"
+  loop_control:
+    loop_var: kv_item
+    label: "{{ kv_item.key }}={{ kv_item.value }}"

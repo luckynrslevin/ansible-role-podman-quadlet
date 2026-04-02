@@ -1,0 +1,12 @@
+---
+
+- name: "Patch {{ patch_item.format }} file: {{ patch_item.file }}"
+  ansible.builtin.script:
+    cmd: >-
+      patch_structured_config.py
+      --file "{{ _volume_mountpoint }}/{{ patch_item.file | regex_replace('^/+', '') }}"
+      --format "{{ patch_item.format }}"
+      --patches '{{ patch_item.values | to_json }}'
+    executable: python3
+  register: patch_structured_result
+  changed_when: (patch_structured_result.stdout | from_json).changed | default(false)

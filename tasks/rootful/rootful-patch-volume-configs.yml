@@ -1,0 +1,103 @@
+- name: Patch config files in rootful Podman volumes
+  become: true
+  vars:
+    possible_volume_names:
+      - "{{ volume.name }}"
+      - "systemd-{{ volume.name }}"
+  block:
+
+    - name: Inspect possible rootful Podman volumes
+      become: true
+      ansible.builtin.command:
+        argv:
+          - podman
+          - volume
+          - inspect
+          - "{{ item }}"
+          - --format
+          - "{{ '{{.Mountpoint}}' }}"
+      register: volume_inspect_results
+      loop: "{{ possible_volume_names }}"
+      loop_control:
+        label: "{{ item }}"
+      ignore_errors: true
+      failed_when: false
+      changed_when: false
+
+    - name: Pick first existing volume mountpoint
+      ansible.builtin.set_fact:
+        rootful_volume_status: >-
+          {{ volume_inspect_results.results
+             | selectattr('stdout', 'defined')
+             | selectattr('stdout', 'ne', '')
+             | first }}
+
+    - name: Assert rootful volume exists
+      ansible.builtin.assert:
+        that:
+          - rootful_volume_status is defined
+          - rootful_volume_status.stdout | length > 0
+        fail_msg: "Podman volume '{{ volume.name }}' or 'systemd-{{ volume.name }}' does not exist or has no mountpoint."
+
+    - name: Patch config files in volume {{ volume.name }}
+      become: true
+      vars:
+        _volume_mountpoint: "{{ rootful_volume_status.stdout }}"
+      block:
+
+        # --------------------
+        # YAML / JSON patches (via Python helper script)
+        # --------------------
+        - name: Apply structured config patches (yaml/json) in volume {{ volume.name }}
+          ansible.builtin.include_tasks: ../shared/patch-structured.yml
+          loop: "{{ volume.patches | default([]) }}"
+          loop_control:
+            loop_var: patch_item
+            label: "{{ patch_item.file }} ({{ patch_item.format }})"
+          when: patch_item.format in ['yaml', 'json']
+
+        # --------------------
+        # INI patches
+        # --------------------
+        - name: Apply INI config patches in volume {{ volume.name }}
+          ansible.builtin.include_tasks: ../shared/patch-ini.yml
+          loop: "{{ volume.patches | default([]) }}"
+          loop_control:
+            loop_var: patch_item
+            label: "{{ patch_item.file }} (ini)"
+          when: patch_item.format == 'ini'
+
+        # --------------------
+        # XML patches
+        # --------------------
+        - name: Apply XML config patches in volume {{ volume.name }}
+          ansible.builtin.include_tasks: ../shared/patch-xml.yml
+          loop: "{{ volume.patches | default([]) }}"
+          loop_control:
+            loop_var: patch_item
+            label: "{{ patch_item.file }} (xml)"
+          when: patch_item.format == 'xml'
+
+        # --------------------
+        # Key-value patches
+        # --------------------
+        - name: Apply key-value config patches in volume {{ volume.name }}
+          ansible.builtin.include_tasks: ../shared/patch-keyvalue.yml
+          loop: "{{ volume.patches | default([]) }}"
+          loop_control:
+            loop_var: patch_item
+            label: "{{ patch_item.file }} (keyvalue)"
+          when: patch_item.format == 'keyvalue'
+
+        # --------------------
+        # Fix ownership (direct chown for rootful)
+        # --------------------
+        - name: Set ownership for patched files in volume {{ volume.name }}
+          ansible.builtin.file:
+            path: "{{ rootful_volume_status.stdout }}/{{ patch_item.file | regex_replace('^/+', '') }}"
+            owner: "{{ patch_item.owner | default(0) }}"
+            group: "{{ patch_item.group | default(0) }}"
+          loop: "{{ volume.patches | default([]) }}"
+          loop_control:
+            loop_var: patch_item
+            label: "{{ patch_item.file }} -> {{ patch_item.owner | default(0) }}:{{ patch_item.group | default(0) }}"
