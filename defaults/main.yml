@@ -44,6 +44,7 @@ podman_quadlet_file_names: ''
 #   $name.pod or $name.pod.j2
 #   $name.container or $name.container.j2
 #   $name.volume or $name.volume.j2
+#   $name.network or $name.network.j2
 # E.g.:
 # podman_quadlet_file_names:
 #   - application.pod
