@@ -2,18 +2,33 @@
 
 ## Description
 
-This role is designed to leverage [podman quadlet](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html) functionality to easily install **single containers** on a system in rootless or rootful mode. Due to usage of podman quadlet, containers are fully managed via systemd. The goal is to keep it as simple as possible and lower effort to install container based applications on a linux system. It is intended to setup home servers or development environments, not to deploy containers on scaling infrastructure like kubernetes.
+Deploy containerized applications as systemd services using [Podman Quadlet](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html) — with full support for both **rootless** and **rootful** containers.
 
+This role automates the entire lifecycle: deploying quadlet unit files, managing volumes, staging configuration files, patching existing configs, and configuring the firewall. Containers are fully managed by systemd, enabling automatic startup on boot and integration with standard Linux service management.
+
+Designed for **home servers** and **development environments** where simplicity and reproducibility matter — not for scaling infrastructure like Kubernetes.
+
+### Key features
+
+- **Rootless and rootful** container deployment via Podman Quadlet
+- **Quadlet unit files**: `.container`, `.volume`, `.pod`, and `.network` (plain files or Jinja2 templates)
+- **Volume file staging**: deploy config files and directories into volumes with correct ownership
+- **Rootless UID/GID mapping**: automatically maps container-perspective UIDs via `podman unshare chown` — no manual subuid offset calculations needed
+- **Config patching**: patch specific values in existing config files (YAML, JSON, INI, XML, key-value) without replacing the entire file
+- **Firewall management**: open ports and configure port forwarding for rootless containers that cannot bind to privileged ports
+- **Quadlet validation**: validates unit files before deployment using `QUADLET_UNIT_DIRS` scoped to the current service
 
 ## Requirements
 
 - Ansible 2.9+
 - Ansible modules
   - ansible.posix.firewalld
-- Python 3
+  - community.general.ini_file (only if using INI config patching)
+  - community.general.xml (only if using XML config patching)
+- Python 3 on managed hosts
 - SSH access to managed hosts
-- Podman version > 5 installed on the remote system
-- For rootless containers linux user must exist and linger must be enabeled.
+- Podman version >= 5 installed on the remote system
+- For rootless containers: Linux user must exist and systemd linger must be enabled
 
 
 ## Usage
