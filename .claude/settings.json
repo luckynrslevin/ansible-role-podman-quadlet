@@ -1,9 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Edit(/home/ds/github/**)",
-      "Write(/home/ds/github/**)",
-      "Read(/home/ds/github/**)",
+      "Edit(~/github/ansible-role-podman-quadlet/**)",
+      "Write(~/github/ansible-role-podman-quadlet/**)",
+      "Read(~/github/ansible-role-podman-quadlet/**))",
       "WebFetch(domain:**.github.com)",
       "WebFetch(domain:**.ansible.com)",
       "WebFetch(domain:docs.python.org)",
