@@ -16,6 +16,8 @@ Designed for **home servers** and **development environments** where simplicity 
 - **Rootless UID/GID mapping**: automatically maps container-perspective UIDs via `podman unshare chown` — no manual subuid offset calculations needed
 - **Config patching**: patch specific values in existing config files (YAML, JSON, INI, XML, key-value) without replacing the entire file
 - **Firewall management**: open ports and configure port forwarding for rootless containers that cannot bind to privileged ports
+- **Security by default**: rootless containers run without root privileges, using Linux user namespaces for isolation
+- **Automatic container updates**: containers can opt in to registry-based auto-updates via Podman's `AutoUpdate=registry` and the `podman-auto-update.timer` systemd timer
 - **Quadlet validation**: validates unit files before deployment using `QUADLET_UNIT_DIRS` scoped to the current service
 
 ## Requirements
