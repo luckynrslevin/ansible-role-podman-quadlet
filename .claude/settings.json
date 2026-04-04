@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Edit(/home/ds/github/**)",
+      "Write(/home/ds/github/**)",
+      "Read(/home/ds/github/**)",
+      "WebFetch(domain:**.github.com)",
+      "WebFetch(domain:**.ansible.com)",
+      "WebFetch(domain:docs.python.org)",
+      "Bash(git *)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(find *)",
+      "Bash(cp *)",
+      "Bash(ssh ans-test *)",
+      "Bash(ansible-lint *)",
+      "Bash(ansible-playbook *)"
+    ]
+  }
+}
