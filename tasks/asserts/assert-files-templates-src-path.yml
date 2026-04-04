@@ -11,7 +11,10 @@
   ansible.builtin.assert:
     that:
       - podman_quadlet_files_templates_src_path != role_path
-    fail_msg: "The podman_quadlet_files_templates_src_path '{{ podman_quadlet_files_templates_src_path }}' must be different from the current role path '{{ role_path }}'."
+    fail_msg: >-
+      The podman_quadlet_files_templates_src_path
+      '{{ podman_quadlet_files_templates_src_path }}'
+      must be different from the current role path '{{ role_path }}'.
 
 - name: "Assert that podman_quadlet_files_templates_src_path is a valid directory"
   ansible.builtin.stat:

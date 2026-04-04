@@ -4,7 +4,7 @@ dependencies: []
 galaxy_info:
   role_name: podman_quadlet
   author: luckynrslevin
-  description: Run apps with podman quadlet
+  description: Deploy single containers as systemd services using Podman Quadlet (rootless and rootful)
   company: ""
   license: "MIT"
   min_ansible_version: "2.9"

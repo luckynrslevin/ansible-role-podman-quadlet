@@ -3,7 +3,7 @@
 # Patch each value individually using --key/--value arguments.
 # This avoids Ansible Vault serialization issues with to_json/dict2items filters
 # which fail on dicts containing vault-decrypted values.
-- name: "Patch {{ patch_item.format }} value: {{ _key }} in {{ patch_item.file }}"
+- name: "Patch {{ patch_item.format }} value: {{ _key }} in {{ patch_item.file }}" # noqa: name[template]
   ansible.builtin.script:
     cmd: >-
       patch_structured_config.py

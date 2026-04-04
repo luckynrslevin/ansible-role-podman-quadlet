@@ -7,6 +7,7 @@
     option: "{{ ini_item.key }}"
     value: "{{ ini_item.value }}"
     no_extra_spaces: true
+    mode: "{{ patch_item.mode | default('0644') }}"
   loop: "{{ patch_item.set | dict2items }}"
   loop_control:
     loop_var: ini_item
