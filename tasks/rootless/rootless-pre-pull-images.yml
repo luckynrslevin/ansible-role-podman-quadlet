@@ -1,0 +1,32 @@
+---
+# Pre-pull container images for the rootless user.
+# Extracts Image= lines from deployed .container quadlet files and
+# pulls each unique image before the systemd restart. This prevents
+# TimeoutStartSec from expiring on first deploy when images aren't
+# cached locally.
+
+- name: Find container quadlet files
+  ansible.builtin.find:
+    paths: "{{ podman_quadlet_systemd_dir }}"
+    patterns: "*.container"
+  register: _pre_pull_container_files
+
+- name: Extract image names from quadlet files
+  ansible.builtin.shell: >
+    grep -h '^Image=' {{ _pre_pull_container_files.files | map(attribute='path') | join(' ') }}
+    | sed 's/^Image=//' | sort -u
+  register: _pre_pull_images
+  changed_when: false
+  when: _pre_pull_container_files.files | length > 0
+
+- name: Pre-pull container images for rootless user
+  become: true
+  ansible.builtin.shell: >
+    su {{ podman_quadlet_rootless_user_name }} -c
+    'XDG_RUNTIME_DIR=/run/user/{{ podman_quadlet_rootless_user_uid }}
+    podman pull {{ item }}'
+  loop: "{{ _pre_pull_images.stdout_lines | default([]) }}"
+  loop_control:
+    label: "{{ item }}"
+  changed_when: false
+  when: _pre_pull_images.stdout_lines | default([]) | length > 0

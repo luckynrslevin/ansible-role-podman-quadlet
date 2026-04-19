@@ -3,6 +3,10 @@
 - name: Copy/Render quadlet unit files/templates
   ansible.builtin.import_tasks: rootful-quadlets.yml
 
+- name: Pre-pull container images
+  ansible.builtin.import_tasks: rootful-pre-pull-images.yml
+  when: podman_quadlet_pre_pull_images | bool
+
 - name: Initial start of the rootful container to create the volumes
   ansible.builtin.import_tasks: rootful-systemd-restart.yml
 

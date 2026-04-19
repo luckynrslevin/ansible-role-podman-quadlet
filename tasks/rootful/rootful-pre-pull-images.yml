@@ -1,0 +1,27 @@
+---
+# Pre-pull container images for rootful containers.
+# Same logic as rootless but runs podman directly as root.
+
+- name: Find container quadlet files
+  ansible.builtin.find:
+    paths: "{{ podman_quadlet_systemd_dir }}"
+    patterns: "*.container"
+  register: _pre_pull_container_files
+
+- name: Extract image names from quadlet files
+  ansible.builtin.shell: >
+    grep -h '^Image=' {{ _pre_pull_container_files.files | map(attribute='path') | join(' ') }}
+    | sed 's/^Image=//' | sort -u
+  register: _pre_pull_images
+  changed_when: false
+  when: _pre_pull_container_files.files | length > 0
+
+- name: Pre-pull container images
+  become: true
+  ansible.builtin.command:
+    cmd: "podman pull {{ item }}"
+  loop: "{{ _pre_pull_images.stdout_lines | default([]) }}"
+  loop_control:
+    label: "{{ item }}"
+  changed_when: false
+  when: _pre_pull_images.stdout_lines | default([]) | length > 0
