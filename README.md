@@ -49,6 +49,7 @@ Available variables are listed below, see `defaults/main.yml` and examples below
 | **podman_quadlet_volumes_config_patches** <br> list of volumes and patches per volume | Patches specific values in existing config files inside volumes (e.g., files created by the container on first start) instead of replacing entire files. See [Config patching](#config-patching). |
 | **podman_quadlet_firewall_ports** <br> list of strings | List of firewall ports to open. E.g. `8080/tcp`, `9090/udp`, `32768-60999/tcp`. |
 | **podman_quadlet_firewall_port_forwards** <br> list of port forward entries | Forwards host ports to container ports. Useful for rootless containers that cannot bind to privileged ports (< 1024). See [Firewall port forwarding](#firewall-port-forwarding). |
+| **podman_quadlet_pre_pull_images** <br> boolean / default: `true` | Pre-pull container images before the first systemd restart. Parses `Image=` lines from deployed `.container` quadlet files and runs `podman pull` for each unique image. Prevents systemd `TimeoutStartSec` from expiring on first deploy. See [Image pre-pulling](#image-pre-pulling). |
 
 ### Config patching
 
@@ -102,6 +103,17 @@ podman_quadlet_firewall_port_forwards:
 ```
 
 This automatically detects the active firewalld zone and applies the forwarding rules.
+
+### Image pre-pulling
+
+On first deploy, the systemd quadlet unit tries to pull the container image during startup. If the image is large (e.g., ~1 GB) and the connection is slow, the pull can exceed the unit's `TimeoutStartSec`, causing the service to fail. For pod-based services with `exit-policy=stop`, one container timing out tears down the entire pod.
+
+By default, the role pre-pulls all container images **before** the first systemd restart. It parses `Image=` lines from the deployed `.container` quadlet files and runs `podman pull` for each unique image. This ensures images are cached locally before systemd tries to start them.
+
+- **Enabled by default** — set `podman_quadlet_pre_pull_images: false` to skip
+- **Automatic** — no need to list images manually; the role discovers them from the quadlet files it just deployed
+- **Rootless-aware** — pulls as the rootless user with the correct `XDG_RUNTIME_DIR`
+- **Idempotent** — subsequent runs are fast no-ops when images are already cached
 
 ### Rootless UID/GID mapping
 
