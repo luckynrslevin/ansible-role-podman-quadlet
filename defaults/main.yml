@@ -134,6 +134,16 @@ podman_quadlet_rootless_user_name: ''
 ###############################################################################
 
 ###############################################################################
+podman_quadlet_pre_pull_images: true
+###############################################################################
+# optional: Pre-pull container images before restarting the service.
+# Parses Image= from deployed .container quadlet files and runs
+# podman pull for each unique image. Prevents systemd timeout on
+# first deploy when images aren't cached locally.
+# Set to false to skip pre-pulling.
+###############################################################################
+
+###############################################################################
 podman_quadlet_firewall_ports: []
 ###############################################################################
 # optional: firewall ports to manage

@@ -3,6 +3,12 @@
 - name: Copy/Render quadlet unit files/templates
   ansible.builtin.import_tasks: rootless-quadlets.yml
 
+# Pre-pull images so the first restart doesn't timeout waiting for
+# a large image pull to complete within TimeoutStartSec.
+- name: Pre-pull container images for rootless user
+  ansible.builtin.import_tasks: rootless-pre-pull-images.yml
+  when: podman_quadlet_pre_pull_images | bool
+
 # This is workaround, since I was not able to find a good solution to create the volumes,
 # defined as quadlet .volume files, without starting the container.
 # However, many containers provide configuration that can be applied within the quadlet file itself,
