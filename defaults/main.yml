@@ -144,6 +144,25 @@ podman_quadlet_pre_pull_images: true
 ###############################################################################
 
 ###############################################################################
+podman_quadlet_pull_policy: "newer"
+###############################################################################
+# optional: --policy value passed to `podman pull` during pre-pull.
+# Default "newer" consults the registry's manifest and only pulls
+# changed layers, avoiding a full re-download when the local image is
+# already up to date. When the registry itself is unreachable (e.g.
+# Docker Hub anonymous-pull rate limit) and the image is already
+# cached locally, the task falls back to the cached image with a
+# warning instead of failing the play; this keeps redeploys resilient
+# to transient registry failures without silently diverging on first
+# install (no cached image + pull fails = hard fail).
+# Other accepted values (podman pull --policy):
+#   always   — pull every time, re-downloading unchanged layers
+#   missing  — pull only when the image is not already local
+#   newer    — pull when remote is strictly newer than local (default)
+#   never    — never pull; fail if not already cached
+###############################################################################
+
+###############################################################################
 podman_quadlet_firewall_ports: []
 ###############################################################################
 # optional: firewall ports to manage
