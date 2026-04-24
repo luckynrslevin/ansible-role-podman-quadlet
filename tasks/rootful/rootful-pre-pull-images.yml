@@ -18,14 +18,18 @@
   register: _pre_pull_container_files
 
 - name: Extract image names from quadlet files
-  ansible.builtin.shell: >
-    grep -h '^Image=' {{ _pre_pull_container_files.files | map(attribute='path') | join(' ') }}
-    | sed 's/^Image=//' | sort -u
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      grep -h '^Image=' {{ _pre_pull_container_files.files | map(attribute='path') | join(' ') }} \
+        | sed 's/^Image=//' | sort -u
+  args:
+    executable: /bin/bash
   register: _pre_pull_images
   changed_when: false
   when: _pre_pull_container_files.files | length > 0
 
-- name: Pre-pull container images (policy={{ podman_quadlet_pull_policy }}; fall back to cached image on failure)
+- name: Pre-pull container images (fall back to cached image on registry failure)
   become: true
   ansible.builtin.shell: |
     set -o pipefail

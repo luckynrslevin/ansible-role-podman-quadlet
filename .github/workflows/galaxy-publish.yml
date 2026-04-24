@@ -1,8 +1,15 @@
 name: Publish to Ansible Galaxy
+# Lint runs on PRs and pushes to main so regressions are caught before
+# a release tag is pushed. Publish only runs on tag pushes.
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*'
+  pull_request:
+    branches:
+      - main
 
 jobs:
   lint:
@@ -17,6 +24,8 @@ jobs:
 
   publish:
     needs: lint
+    # Only publish on a release tag push — never on PR or main push.
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
