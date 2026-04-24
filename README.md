@@ -50,6 +50,7 @@ Available variables are listed below, see `defaults/main.yml` and examples below
 | **podman_quadlet_firewall_ports** <br> list of strings | List of firewall ports to open. E.g. `8080/tcp`, `9090/udp`, `32768-60999/tcp`. |
 | **podman_quadlet_firewall_port_forwards** <br> list of port forward entries | Forwards host ports to container ports. Useful for rootless containers that cannot bind to privileged ports (< 1024). See [Firewall port forwarding](#firewall-port-forwarding). |
 | **podman_quadlet_pre_pull_images** <br> boolean / default: `true` | Pre-pull container images before the first systemd restart. Parses `Image=` lines from deployed `.container` quadlet files and runs `podman pull` for each unique image. Prevents systemd `TimeoutStartSec` from expiring on first deploy. See [Image pre-pulling](#image-pre-pulling). |
+| **podman_quadlet_pull_policy** <br> string / default: `newer` | `--policy` passed to `podman pull` during pre-pull. `newer` (default) re-downloads layers only when the remote is newer, saving bandwidth on redeploys. Other values: `always`, `missing`, `never`. See [Pull policy and registry-failure handling](#pull-policy-and-registry-failure-handling). |
 
 ### Config patching
 
@@ -114,6 +115,21 @@ By default, the role pre-pulls all container images **before** the first systemd
 - **Automatic** — no need to list images manually; the role discovers them from the quadlet files it just deployed
 - **Rootless-aware** — pulls as the rootless user with the correct `XDG_RUNTIME_DIR`
 - **Idempotent** — subsequent runs are fast no-ops when images are already cached
+
+#### Pull policy and registry-failure handling
+
+The pre-pull step uses `podman pull --policy={{ podman_quadlet_pull_policy }}` (default `newer`). With `newer`, podman consults the registry's manifest and only re-downloads layers that have actually changed upstream — an already-up-to-date image triggers no blob traffic.
+
+Accepted `podman_quadlet_pull_policy` values (passed through to `podman pull --policy`):
+
+| Value | Behaviour |
+| --- | --- |
+| `always` | Always pull, re-downloading unchanged layers. |
+| `missing` | Pull only when the image is not already local; no registry consultation after that. |
+| `newer` (default) | Pull only when the remote manifest is strictly newer than the local copy. |
+| `never` | Never pull; fail if the image is not already cached locally. |
+
+**Registry-failure fallback.** If the pull fails for any reason (rate limit, transient DNS, network outage) **and** the image is already present locally, the role logs a warning and continues with the cached image rather than failing the play. If the pull fails **and** no cached image exists (fresh install, rate-limited), the play hard-fails — there's nothing to fall back to. This makes redeploys resilient to transient registry problems without silently diverging on a clean install.
 
 ### Rootless UID/GID mapping
 

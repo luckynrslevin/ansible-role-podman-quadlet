@@ -1,6 +1,15 @@
 ---
 # Pre-pull container images for rootful containers.
 # Same logic as rootless but runs podman directly as root.
+#
+# Pull policy (podman_quadlet_pull_policy, default "newer") avoids
+# re-downloading image blobs when the local copy is already up to date
+# — the registry is still consulted for a manifest comparison, but
+# only blobs for changed layers are transferred. When the registry
+# itself is unreachable (network outage, Docker Hub anonymous pull
+# rate limit, etc.) and the image is already cached locally, the
+# pull step logs a warning and proceeds with the cached image.
+# Without a cached image and with a failed pull, the play fails hard.
 
 - name: Find container quadlet files
   ansible.builtin.find:
@@ -16,12 +25,27 @@
   changed_when: false
   when: _pre_pull_container_files.files | length > 0
 
-- name: Pre-pull container images
+- name: Pre-pull container images (policy={{ podman_quadlet_pull_policy }}; fall back to cached image on failure)
   become: true
-  ansible.builtin.command:
-    cmd: "podman pull {{ item }}"
+  ansible.builtin.shell: |
+    set -o pipefail
+    if podman pull --policy={{ podman_quadlet_pull_policy }} {{ item | quote }}; then
+      exit 0
+    fi
+    echo "[warn] podman pull failed for {{ item }}; checking local cache" >&2
+    if podman image exists {{ item | quote }}; then
+      echo "[warn] using locally cached image for {{ item }} (registry unreachable or rate-limited)" >&2
+      exit 0
+    fi
+    echo "[err] pull failed and no cached image for {{ item }}" >&2
+    exit 1
+  args:
+    executable: /bin/bash
+  register: _pre_pull_result
   loop: "{{ _pre_pull_images.stdout_lines | default([]) }}"
   loop_control:
     label: "{{ item }}"
-  changed_when: false
+  changed_when: >-
+    'Writing manifest' in _pre_pull_result.stdout or
+    'Writing manifest' in (_pre_pull_result.stderr | default(''))
   when: _pre_pull_images.stdout_lines | default([]) | length > 0
