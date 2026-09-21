@@ -177,7 +177,23 @@ podman_quadlet_firewall_ports: []
 ###############################################################################
 podman_quadlet_firewall_port_forwards: []
 ###############################################################################
-# optional: firewall port forwards to manage
+# optional: IPv4 firewall port forwards to manage
+# Useful for rootless containers that cannot bind to privileged ports (< 1024).
+# Each entry forwards a host port to a container port.
+#
+# podman_quadlet_firewall_port_forwards:
+#   - port: 443
+#     proto: tcp
+#     toport: 8443
+#   - port: 53
+#     proto: udp
+#     toport: 1053
+###############################################################################
+
+###############################################################################
+podman_quadlet_firewall_port_forwards_v6: []
+###############################################################################
+# optional: IPv6 firewall port forwards to manage
 # Useful for rootless containers that cannot bind to privileged ports (< 1024).
 # Each entry forwards a host port to a container port.
 #
